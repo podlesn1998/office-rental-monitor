@@ -71,6 +71,17 @@ export default function TelegramPage() {
     onError: () => toast.error("Ошибка отправки"),
   });
 
+  const registerWebhookMutation = trpc.telegram.registerWebhook.useMutation({
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success(`Webhook зарегистрирован: ${res.webhookUrl}`);
+      } else {
+        toast.error("Ошибка регистрации webhook");
+      }
+    },
+    onError: () => toast.error("Ошибка регистрации webhook"),
+  });
+
   const handleSave = () => {
     const data: Record<string, unknown> = { active };
     if (botToken) data.botToken = botToken;
@@ -241,6 +252,22 @@ export default function TelegramPage() {
                 <Send size={15} />
               )}
               {sendPendingMutation.isPending ? "Отправка..." : "📨 Отправить все объявления в Telegram"}
+            </Button>
+          )}
+
+          {config?.hasToken && (
+            <Button
+              onClick={() => registerWebhookMutation.mutate()}
+              disabled={registerWebhookMutation.isPending}
+              variant="outline"
+              className="w-full h-11 gap-2 text-muted-foreground hover:text-foreground"
+            >
+              {registerWebhookMutation.isPending ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Bot size={15} />
+              )}
+              {registerWebhookMutation.isPending ? "Регистрация..." : "🔗 Зарегистрировать Webhook (кнопки в боте)"}
             </Button>
           )}
         </div>

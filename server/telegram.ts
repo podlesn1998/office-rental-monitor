@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { listings, telegramConfig, type Listing } from "../drizzle/schema";
-import { getDb } from "./db";
+import { getDb, updateListingStatus } from "./db";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -458,7 +458,6 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
       const newStatus = match[1] as "new" | "viewed" | "interesting";
       const listingId = parseInt(match[2], 10);
 
-      const { updateListingStatus } = await import("./db.js");
       await updateListingStatus(listingId, newStatus);
 
       const statusText = newStatus === "viewed" ? "Просмотрено" : newStatus === "interesting" ? "Добавлено в Интересные" : "Статус сброшен";

@@ -17,6 +17,7 @@ import {
 } from "./db";
 import { runAllScrapers, runPlatformScrape } from "./scrapers/index";
 import { sendPendingListings, sendAllListingsForced, testTelegramConnection } from "./telegram";
+import { registerTelegramWebhook } from "./scheduler";
 
 export const appRouter = router({
   system: systemRouter,
@@ -140,6 +141,15 @@ export const appRouter = router({
       // Use forced send — bypasses active flag, sends all unsent listings
       const count = await sendAllListingsForced();
       return { sent: count };
+    }),
+
+    registerWebhook: publicProcedure.mutation(async () => {
+      const appId = process.env.VITE_APP_ID ?? "";
+      if (!appId) return { success: false, message: "APP_ID not configured" };
+      const appIdPrefix = appId.slice(0, 8).toLowerCase();
+      const webhookUrl = `https://officerent-${appIdPrefix}.manus.space/api/telegram/webhook`;
+      const ok = await registerTelegramWebhook(webhookUrl);
+      return { success: ok, webhookUrl };
     }),
   }),
 

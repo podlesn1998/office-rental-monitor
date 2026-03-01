@@ -167,3 +167,11 @@
 - [x] Update web UI: status tabs (Все / Новые / Интересные / Просмотренные) + platform chips
 - [x] Add status action buttons on listing cards (Отметить / Интересно) with optimistic updates
 - [x] All 34 tests passing
+
+## Bug: Telegram Callback Buttons Not Working (FIXED)
+- [x] Diagnose: registerTelegramWebhook() existed but was never called — Telegram didn't know our webhook URL
+- [x] Fix: call registerTelegramWebhook() on server startup in _core/index.ts
+- [x] Fix: add telegram.registerWebhook tRPC procedure + button in TelegramPage for manual re-registration
+- [x] Fix: replace dynamic import('./db.js') with static import of updateListingStatus in telegram.ts
+- [x] Webhook registered: https://officerent-kommtgdc.manus.space/api/telegram/webhook
+- [x] All 34 tests passing

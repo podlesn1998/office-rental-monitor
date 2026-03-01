@@ -8,7 +8,7 @@ import { registerChatRoutes } from "./chat";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { startScheduler, telegramWebhookHandler } from "../scheduler";
+import { startScheduler, telegramWebhookHandler, registerTelegramWebhook } from "../scheduler";
 import { closeBrowser } from "../scrapers/browser";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -71,6 +71,17 @@ async function startServer() {
     console.log(`Server running on http://localhost:${port}/`);
     // Start the 30-minute monitoring scheduler
     startScheduler();
+    // Register Telegram webhook for callback_query (inline keyboard buttons)
+    const appId = process.env.VITE_APP_ID ?? "";
+    if (appId) {
+      // Manus public domain: {appname}-{appid_prefix}.manus.space
+      // Extract first 8 chars of appId (lowercase) for domain prefix
+      const appIdPrefix = appId.slice(0, 8).toLowerCase();
+      const webhookUrl = `https://officerent-${appIdPrefix}.manus.space/api/telegram/webhook`;
+      registerTelegramWebhook(webhookUrl).catch((err) =>
+        console.warn("[Telegram] Webhook registration failed:", err)
+      );
+    }
   });
 }
 
