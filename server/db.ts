@@ -70,10 +70,17 @@ export async function getUserByOpenId(openId: string) {
 
 // ---- Listings helpers ----
 
+export async function updateListingStatus(id: number, status: "new" | "viewed" | "interesting") {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(listings).set({ status }).where(eq(listings.id, id));
+}
+
 export async function getListings(opts: {
   platform?: "cian" | "avito" | "yandex";
   isNew?: boolean;
   isSent?: boolean;
+  status?: "new" | "viewed" | "interesting";
   limit?: number;
   offset?: number;
 }) {
@@ -84,6 +91,7 @@ export async function getListings(opts: {
   if (opts.platform) conditions.push(eq(listings.platform, opts.platform));
   if (opts.isNew !== undefined) conditions.push(eq(listings.isNew, opts.isNew));
   if (opts.isSent !== undefined) conditions.push(eq(listings.isSent, opts.isSent));
+  if (opts.status !== undefined) conditions.push(eq(listings.status, opts.status));
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
   const limit = opts.limit ?? 20;

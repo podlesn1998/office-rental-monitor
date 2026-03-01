@@ -118,16 +118,32 @@ async function sendTelegramMessage(
 }
 
 /**
+ * Build inline keyboard for a listing (status buttons).
+ */
+function buildListingKeyboard(listingId: number) {
+  return {
+    inline_keyboard: [
+      [
+        { text: "✅ Просмотрено", callback_data: `status:viewed:${listingId}` },
+        { text: "⭐ Интересно", callback_data: `status:interesting:${listingId}` },
+      ],
+    ],
+  };
+}
+
+/**
  * Send a listing with photo(s) via Telegram.
  * Uses sendPhoto if photos are available, otherwise sendMessage.
+ * Returns the Telegram message_id if successful, or null.
  */
 async function sendListingNotification(
   botToken: string,
   chatId: string,
   listing: Listing
-): Promise<boolean> {
+): Promise<number | null> {
   const text = formatListingMessage(listing);
   const photos = (listing.photos as string[]) ?? [];
+  const replyMarkup = buildListingKeyboard(listing.id);
 
   if (photos.length > 0) {
     try {
@@ -141,11 +157,15 @@ async function sendListingNotification(
           photo: photos[0],
           caption: text.slice(0, 1024), // Telegram caption limit
           parse_mode: "HTML",
+          reply_markup: replyMarkup,
         }),
         signal: AbortSignal.timeout(10000),
       });
 
-      if (response.ok) return true;
+      if (response.ok) {
+        const data = await response.json() as { result?: { message_id?: number } };
+        return data.result?.message_id ?? null;
+      }
       if (response.status === 429) {
         try {
           const body = await response.json() as { parameters?: { retry_after?: number } };
@@ -155,10 +175,13 @@ async function sendListingNotification(
           const retry = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId, photo: photos[0], caption: text.slice(0, 1024), parse_mode: "HTML" }),
+            body: JSON.stringify({ chat_id: chatId, photo: photos[0], caption: text.slice(0, 1024), parse_mode: "HTML", reply_markup: replyMarkup }),
             signal: AbortSignal.timeout(10000),
           });
-          if (retry.ok) return true;
+          if (retry.ok) {
+            const data = await retry.json() as { result?: { message_id?: number } };
+            return data.result?.message_id ?? null;
+          }
         } catch {
           // Fall through
         }
@@ -169,7 +192,44 @@ async function sendListingNotification(
     }
   }
 
-  return sendTelegramMessage(botToken, chatId, text);
+  // Text message fallback
+  try {
+    const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: false,
+        reply_markup: replyMarkup,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (response.status === 429) {
+      const body = await response.json() as { parameters?: { retry_after?: number } };
+      const retryAfter = (body.parameters?.retry_after ?? 30) + 2;
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      const retry = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: false, reply_markup: replyMarkup }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (retry.ok) {
+        const data = await retry.json() as { result?: { message_id?: number } };
+        return data.result?.message_id ?? null;
+      }
+      return null;
+    }
+    if (!response.ok) return null;
+    const data = await response.json() as { result?: { message_id?: number } };
+    return data.result?.message_id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -184,15 +244,15 @@ export async function sendListingsBatch(
   let sentCount = 0;
 
   for (const listing of listingsList) {
-    const success = await sendListingNotification(botToken, chatId, listing);
-    if (success) {
+    const messageId = await sendListingNotification(botToken, chatId, listing);
+    if (messageId !== null) {
       sentCount++;
-      // Mark as sent in DB
+      // Mark as sent in DB and save telegram message_id
       const db = await getDb();
       if (db) {
         await db
           .update(listings)
-          .set({ isSent: true, isNew: false })
+          .set({ isSent: true, isNew: false, telegramMessageId: messageId })
           .where(eq(listings.id, listing.id));
       }
     }
@@ -329,9 +389,90 @@ export async function testTelegramConnection(
 }
 
 /**
- * Handle Telegram webhook updates (for /start, /status, /list commands).
+ * Answer a Telegram callback query (removes loading spinner on button).
+ */
+async function answerCallbackQuery(botToken: string, callbackQueryId: string, text?: string): Promise<void> {
+  await fetch(`${TELEGRAM_API}/bot${botToken}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: callbackQueryId, text, show_alert: false }),
+    signal: AbortSignal.timeout(5000),
+  }).catch(() => {});
+}
+
+/**
+ * Edit the inline keyboard of a sent message to reflect new status.
+ */
+async function updateMessageKeyboard(
+  botToken: string,
+  chatId: string,
+  messageId: number,
+  status: "viewed" | "interesting",
+  listingId: number
+): Promise<void> {
+  const statusLabel = status === "viewed" ? "✅ Просмотрено" : "⭐ Интересно";
+  const newKeyboard = {
+    inline_keyboard: [
+      [
+        {
+          text: status === "viewed" ? "✅ Просмотрено" : "✅ Отметить просмотренным",
+          callback_data: status === "viewed" ? `status:new:${listingId}` : `status:viewed:${listingId}`,
+        },
+        {
+          text: status === "interesting" ? "⭐ Интересно" : "⭐ Интересно",
+          callback_data: status === "interesting" ? `status:new:${listingId}` : `status:interesting:${listingId}`,
+        },
+      ],
+    ],
+  };
+  void statusLabel; // used in answer text
+  await fetch(`${TELEGRAM_API}/bot${botToken}/editMessageReplyMarkup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, message_id: messageId, reply_markup: newKeyboard }),
+    signal: AbortSignal.timeout(5000),
+  }).catch(() => {});
+}
+
+/**
+ * Handle Telegram webhook updates (for /start, /status, /list commands and button callbacks).
  */
 export async function handleTelegramUpdate(update: Record<string, unknown>): Promise<void> {
+  // Handle inline button callback queries
+  const callbackQuery = update.callback_query as Record<string, unknown> | undefined;
+  if (callbackQuery) {
+    const callbackId = String(callbackQuery.id ?? "");
+    const data = String(callbackQuery.data ?? "");
+    const callbackChatId = String((callbackQuery.message as Record<string, unknown>)?.chat ? ((callbackQuery.message as Record<string, unknown>).chat as Record<string, unknown>).id : "");
+    const callbackMessageId = Number((callbackQuery.message as Record<string, unknown>)?.message_id ?? 0);
+
+    const db = await getDb();
+    if (!db) return;
+    const configs = await db.select().from(telegramConfig).limit(1);
+    const config = configs[0];
+    if (!config?.botToken) return;
+
+    // Parse: status:viewed:123 or status:interesting:123 or status:new:123
+    const match = data.match(/^status:(new|viewed|interesting):(\d+)$/);
+    if (match) {
+      const newStatus = match[1] as "new" | "viewed" | "interesting";
+      const listingId = parseInt(match[2], 10);
+
+      const { updateListingStatus } = await import("./db.js");
+      await updateListingStatus(listingId, newStatus);
+
+      const statusText = newStatus === "viewed" ? "Просмотрено" : newStatus === "interesting" ? "Добавлено в Интересные" : "Статус сброшен";
+      await answerCallbackQuery(config.botToken, callbackId, `✅ ${statusText}`);
+
+      if (callbackMessageId && newStatus !== "new") {
+        await updateMessageKeyboard(config.botToken, callbackChatId, callbackMessageId, newStatus, listingId);
+      }
+    } else {
+      await answerCallbackQuery(config.botToken, callbackId);
+    }
+    return;
+  }
+
   const message = update.message as Record<string, unknown> | undefined;
   if (!message) return;
 

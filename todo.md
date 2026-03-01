@@ -155,3 +155,15 @@
 - [x] When unauthenticated user clicked "Обновить", server returned UNAUTHORIZED, main.tsx did window.location.href = loginUrl → full page reload
 - [x] Fix: changed all app-specific procedures to publicProcedure (personal tool, no auth needed)
 - [x] Fix: removed redirect-to-login on UNAUTHORIZED error in main.tsx
+
+## Feature: Telegram Status Buttons + Web Tabs (COMPLETED)
+- [x] Add `status` field to listings table (enum: new | viewed | interesting) + telegramMessageId
+- [x] Generate and apply DB migration SQL
+- [x] Update getListings to filter by status
+- [x] Add updateListingStatus helper in db.ts
+- [x] Add inline keyboard buttons to Telegram messages (✅ Просмотрено / ⭐ Интересно)
+- [x] Handle callback_query in handleTelegramUpdate: update DB status + answer callback + update keyboard
+- [x] Add tRPC listings.updateStatus procedure
+- [x] Update web UI: status tabs (Все / Новые / Интересные / Просмотренные) + platform chips
+- [x] Add status action buttons on listing cards (Отметить / Интересно) with optimistic updates
+- [x] All 34 tests passing

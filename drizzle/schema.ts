@@ -47,6 +47,8 @@ export const listings = mysqlTable("listings", {
   phone: varchar("phone", { length: 64 }),
   isNew: boolean("isNew").default(true).notNull(),
   isSent: boolean("isSent").default(false).notNull(),
+  status: mysqlEnum("status", ["new", "viewed", "interesting"]).default("new").notNull(),
+  telegramMessageId: bigint("telegramMessageId", { mode: "number" }), // Telegram message ID for inline button updates
   firstSeen: timestamp("firstSeen").defaultNow().notNull(),
   lastSeen: timestamp("lastSeen").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

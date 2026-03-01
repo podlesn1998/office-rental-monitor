@@ -22,6 +22,13 @@
       "when": 1772369834557,
       "tag": "0002_yielding_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1772402389915,
+      "tag": "0003_even_scrambler",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,8 @@ import {
   Filter,
   Layers,
   Map,
+  Eye,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,6 +31,8 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   avito: "badge-avito",
   yandex: "badge-yandex",
 };
+
+type ListingStatus = "new" | "viewed" | "interesting";
 
 interface ListingItem {
   id: number;
@@ -47,13 +51,15 @@ interface ListingItem {
   photos: unknown;
   url: string;
   isNew: boolean;
+  status: ListingStatus;
 }
 
-function ListingCard({ listing }: { listing: ListingItem }) {
+function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStatusChange: (id: number, status: ListingStatus) => void }) {
   const platform = listing.platform;
   const photos = Array.isArray(listing.photos) ? (listing.photos as string[]) : [];
   const price = listing.price ? Number(listing.price).toLocaleString("ru-RU") : null;
   const isNew = listing.isNew;
+  const status = listing.status ?? "new";
 
   return (
     <div className="listing-card bg-card rounded-2xl overflow-hidden border border-border mb-3">
@@ -160,11 +166,37 @@ function ListingCard({ listing }: { listing: ListingItem }) {
           href={listing.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors mb-2"
         >
           <ExternalLink size={14} />
           Открыть объявление
         </a>
+
+        {/* Status action buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => onStatusChange(listing.id, status === "viewed" ? "new" : "viewed")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-colors border ${
+              status === "viewed"
+                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <Eye size={12} />
+            {status === "viewed" ? "Просмотрено" : "Отметить"}
+          </button>
+          <button
+            onClick={() => onStatusChange(listing.id, status === "interesting" ? "new" : "interesting")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-colors border ${
+              status === "interesting"
+                ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <Star size={12} />
+            {status === "interesting" ? "Интересно" : "Интересно"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -186,12 +218,31 @@ function ListingSkeleton() {
 
 export default function Home() {
   const [platform, setPlatform] = useState<Platform | undefined>(undefined);
-  const [showNewOnly, setShowNewOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ListingStatus | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const LIMIT = 15;
 
+  const utils = trpc.useUtils();
+
+  const updateStatusMutation = trpc.listings.updateStatus.useMutation({
+    onMutate: async ({ id, status }) => {
+      // Optimistic update
+      await utils.listings.list.cancel();
+      const prev = utils.listings.list.getData({ platform, status: statusFilter, limit: LIMIT, offset });
+      utils.listings.list.setData(
+        { platform, status: statusFilter, limit: LIMIT, offset },
+        (old) => old ? { ...old, items: old.items.map((item) => item.id === id ? { ...item, status } : item) } : old
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) utils.listings.list.setData({ platform, status: statusFilter, limit: LIMIT, offset }, ctx.prev);
+    },
+    onSettled: () => utils.listings.list.invalidate(),
+  });
+
   const { data, isLoading, refetch } = trpc.listings.list.useQuery(
-    { platform, isNew: showNewOnly ? true : undefined, limit: LIMIT, offset },
+    { platform, status: statusFilter, limit: LIMIT, offset },
     { refetchInterval: 120000 }
   );
   const { data: stats } = trpc.listings.stats.useQuery(undefined, { refetchInterval: 60000 });
@@ -203,6 +254,10 @@ export default function Home() {
     },
     onError: () => toast.error("Ошибка при запуске парсера"),
   });
+
+  const handleStatusChange = (id: number, status: ListingStatus) => {
+    updateStatusMutation.mutate({ id, status });
+  };
 
   const listings = (data?.items ?? []) as ListingItem[];
   const total = data?.total ?? 0;
@@ -251,16 +306,61 @@ export default function Home() {
           </div>
         )}
 
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+        {/* Status tabs */}
+        <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
           <button
-            onClick={() => { setPlatform(undefined); setOffset(0); }}
+            onClick={() => { setStatusFilter(undefined); setOffset(0); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
-              !platform && !showNewOnly
+              statusFilter === undefined
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card text-muted-foreground border-border hover:text-foreground"
             }`}
           >
             <Layers size={11} /> Все
+          </button>
+          <button
+            onClick={() => { setStatusFilter("new"); setOffset(0); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              statusFilter === "new"
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            <Filter size={11} /> Новые
+          </button>
+          <button
+            onClick={() => { setStatusFilter("interesting"); setOffset(0); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              statusFilter === "interesting"
+                ? "bg-amber-500 text-white border-amber-500"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            <Star size={11} /> Интересные
+          </button>
+          <button
+            onClick={() => { setStatusFilter("viewed"); setOffset(0); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              statusFilter === "viewed"
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            <Eye size={11} /> Просмотренные
+          </button>
+        </div>
+
+        {/* Platform filter chips */}
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+          <button
+            onClick={() => { setPlatform(undefined); setOffset(0); }}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              !platform
+                ? "bg-muted text-foreground border-border"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            Все площадки
           </button>
           {(["cian", "avito", "yandex"] as Platform[]).map((p) => (
             <button
@@ -275,16 +375,6 @@ export default function Home() {
               {PLATFORM_LABELS[p]}
             </button>
           ))}
-          <button
-            onClick={() => { setShowNewOnly(!showNewOnly); setOffset(0); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
-              showNewOnly
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card text-muted-foreground border-border hover:text-foreground"
-            }`}
-          >
-            <Filter size={11} /> Новые
-          </button>
         </div>
 
         {isLoading ? (
@@ -312,7 +402,7 @@ export default function Home() {
         ) : (
           <>
             {listings.map((listing) => (
-              <ListingCard key={`${listing.platform}-${listing.platformId}`} listing={listing} />
+              <ListingCard key={`${listing.platform}-${listing.platformId}`} listing={listing} onStatusChange={handleStatusChange} />
             ))}
             <div className="flex items-center justify-between py-4">
               <Button

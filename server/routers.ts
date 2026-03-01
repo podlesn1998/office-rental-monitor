@@ -13,6 +13,7 @@ import {
   updateTelegramConfig,
   addManualListing,
   deleteListing,
+  updateListingStatus,
 } from "./db";
 import { runAllScrapers, runPlatformScrape } from "./scrapers/index";
 import { sendPendingListings, sendAllListingsForced, testTelegramConnection } from "./telegram";
@@ -36,6 +37,7 @@ export const appRouter = router({
         z.object({
           platform: z.enum(["cian", "avito", "yandex"]).optional(),
           isNew: z.boolean().optional(),
+          status: z.enum(["new", "viewed", "interesting"]).optional(),
           limit: z.number().min(1).max(100).default(20),
           offset: z.number().min(0).default(0),
         })
@@ -47,6 +49,18 @@ export const appRouter = router({
     stats: publicProcedure.query(async () => {
       return getListingStats();
     }),
+
+    updateStatus: publicProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.enum(["new", "viewed", "interesting"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await updateListingStatus(input.id, input.status);
+        return { success: true };
+      }),
   }),
 
   // ---- Search Config ----
