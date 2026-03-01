@@ -22,6 +22,7 @@ export default function TelegramPage() {
   const [chatId, setChatId] = useState("");
   const [active, setActive] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [silentSave, setSilentSave] = useState(false);
 
   useEffect(() => {
     if (config) {
@@ -31,7 +32,11 @@ export default function TelegramPage() {
   }, [config]);
 
   const updateMutation = trpc.telegram.update.useMutation({
-    onSuccess: () => { toast.success("Настройки Telegram сохранены"); refetch(); },
+    onSuccess: () => {
+      if (!silentSave) toast.success("Настройки Telegram сохранены");
+      setSilentSave(false);
+      refetch();
+    },
     onError: () => toast.error("Ошибка сохранения"),
   });
 
@@ -43,8 +48,18 @@ export default function TelegramPage() {
           ? `Подключено! Бот: ${res.botName}`
           : res.error ?? "Ошибка подключения",
       });
-      if (res.success) toast.success("Тест успешен! Проверьте Telegram.");
-      else toast.error(res.error ?? "Ошибка подключения");
+      if (res.success) {
+        // Auto-enable notifications and auto-save on successful test
+        setActive(true);
+        setSilentSave(true); // suppress duplicate toast
+        const saveData: Record<string, unknown> = { active: true };
+        if (botToken) saveData.botToken = botToken;
+        if (chatId) saveData.chatId = chatId;
+        updateMutation.mutate(saveData as Parameters<typeof updateMutation.mutate>[0]);
+        toast.success(`Подключено! Бот: ${res.botName}. Настройки сохранены автоматически.`);
+      } else {
+        toast.error(res.error ?? "Ошибка подключения");
+      }
     },
     onError: () => {
       setTestResult({ success: false, message: "Ошибка при тестировании" });

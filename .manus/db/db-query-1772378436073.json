@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, botToken, chatId, active, createdAt FROM telegramConfig LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, botToken, chatId, active, createdAt FROM telegramConfig LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "botToken": "8704962045:AAGcAfZWlL5XfclpgvWO9LwTzo6Wk_9D8ZE",
+      "chatId": "-1003767429212",
+      "active": "0",
+      "createdAt": "2026-03-01 12:57:33"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbotToken\tchatId\tactive\tcreatedAt\n1\t8704962045:AAGcAfZWlL5XfclpgvWO9LwTzo6Wk_9D8ZE\t-1003767429212\t0\t2026-03-01 12:57:33\n",
+  "stderr": "",
+  "execution_time_ms": 362
+}

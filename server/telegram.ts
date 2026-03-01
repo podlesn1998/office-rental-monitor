@@ -169,12 +169,13 @@ export async function sendListingsBatch(
 
 /**
  * Send new listings that haven't been sent yet.
+ * Only runs when active = true (used by scheduler).
  */
 export async function sendPendingListings(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
 
-  // Get Telegram config
+  // Get Telegram config — must be active
   const configs = await db
     .select()
     .from(telegramConfig)
@@ -199,6 +200,43 @@ export async function sendPendingListings(): Promise<number> {
 
   console.log(`[Telegram] Sending ${unsentListings.length} pending listings...`);
   return sendListingsBatch(config.botToken, config.chatId, unsentListings);
+}
+
+/**
+ * Force-send all unsent listings regardless of active flag.
+ * Used for manual "Send all" button — bypasses active check.
+ */
+export async function sendAllListingsForced(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Get any config (active or not) as long as token and chatId are set
+  const configs = await db
+    .select()
+    .from(telegramConfig)
+    .limit(1);
+
+  const config = configs[0];
+  if (!config?.botToken || !config?.chatId) {
+    console.log("[Telegram] No config found, cannot send");
+    return 0;
+  }
+
+  // Get ALL unsent listings (not just isNew=true, to catch everything)
+  const unsentListings = await db
+    .select()
+    .from(listings)
+    .where(eq(listings.isSent, false))
+    .orderBy(listings.firstSeen)
+    .limit(50); // Allow up to 50 for manual send
+
+  if (unsentListings.length === 0) {
+    console.log("[Telegram] No unsent listings to send");
+    return 0;
+  }
+
+  console.log(`[Telegram] Force-sending ${unsentListings.length} listings...`);
+  return sendListingsBatch(config.botToken, config.chatId, unsentListings, 1200);
 }
 
 /**

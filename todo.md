@@ -96,3 +96,9 @@
 - [x] Update Yandex scraper to extract ceiling height from card text
 - [x] Update listing cards UI: show area (м²) and ceiling height prominently
 - [x] Update Telegram message formatter to include area and ceiling height
+
+## Bug: Telegram Not Sending (FIXED)
+- [x] Diagnose: active=false in DB blocked all sends (sendPendingListings required active=true)
+- [x] Add sendAllListingsForced() that bypasses active check — used by manual send button
+- [x] Auto-enable active=true and auto-save settings on successful connection test
+- [x] Suppress duplicate toast on auto-save after test

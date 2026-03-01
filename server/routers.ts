@@ -15,7 +15,7 @@ import {
   deleteListing,
 } from "./db";
 import { runAllScrapers, runPlatformScrape } from "./scrapers/index";
-import { sendPendingListings, testTelegramConnection } from "./telegram";
+import { sendPendingListings, sendAllListingsForced, testTelegramConnection } from "./telegram";
 
 export const appRouter = router({
   system: systemRouter,
@@ -123,7 +123,8 @@ export const appRouter = router({
       }),
 
     sendPending: protectedProcedure.mutation(async () => {
-      const count = await sendPendingListings();
+      // Use forced send — bypasses active flag, sends all unsent listings
+      const count = await sendAllListingsForced();
       return { sent: count };
     }),
   }),
