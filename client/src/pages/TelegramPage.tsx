@@ -213,19 +213,19 @@ export default function TelegramPage() {
             {updateMutation.isPending ? "Сохранение..." : "Сохранить настройки"}
           </Button>
 
-          {config?.active && (
+          {(config?.hasToken || botToken) && chatId && (
             <Button
               onClick={() => sendPendingMutation.mutate()}
               disabled={sendPendingMutation.isPending}
               variant="outline"
-              className="w-full h-11 gap-2"
+              className="w-full h-11 gap-2 border-primary/40 text-primary hover:bg-primary/10"
             >
               {sendPendingMutation.isPending ? (
                 <Loader2 size={15} className="animate-spin" />
               ) : (
                 <Send size={15} />
               )}
-              Отправить несмотренные объявления
+              {sendPendingMutation.isPending ? "Отправка..." : "📨 Отправить все объявления в Telegram"}
             </Button>
           )}
         </div>

@@ -1,0 +1,21 @@
+{
+  "query": "SELECT platform, COUNT(*) as count FROM listings GROUP BY platform;\nSELECT id, platform, platformId, price, area, metroStation, address, url FROM listings LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT platform, COUNT(*) as count FROM listings GROUP BY platform;\nSELECT id, platform, platformId, price, area, metroStation, address, url FROM listings LIMIT 5;",
+  "rows": [
+    {
+      "platform": "cian",
+      "count": "25"
+    }
+  ],
+  "messages": [
+    "id\tplatform\tplatformId\tprice\tarea\tmetroStation\taddress\turl",
+    "1\tcian\t298475382\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/298475382/",
+    "2\tcian\t327350174\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/327350174/",
+    "3\tcian\t326412199\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/326412199/",
+    "4\tcian\t324817800\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/324817800/",
+    "5\tcian\t309885987\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/309885987/"
+  ],
+  "stdout": "platform\tcount\ncian\t25\nid\tplatform\tplatformId\tprice\tarea\tmetroStation\taddress\turl\n1\tcian\t298475382\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/298475382/\n2\tcian\t327350174\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/327350174/\n3\tcian\t326412199\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/326412199/\n4\tcian\t324817800\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/324817800/\n5\tcian\t309885987\t70000\t70\tЧернышевская\tСанкт-Петербург, р-н Центральный, Литейный, м. Чернышевская, Литейный проспект, 41\thttps://spb.cian.ru/rent/commercial/309885987/\n",
+  "stderr": "",
+  "execution_time_ms": 466
+}

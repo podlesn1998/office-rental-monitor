@@ -1,5 +1,5 @@
-import * as cheerio from "cheerio";
 import type { InsertListing } from "../../drizzle/schema";
+import { createStealthPage } from "./browser";
 
 interface SearchParams {
   minArea: number;
@@ -8,206 +8,158 @@ interface SearchParams {
   maxPrice: number;
 }
 
-const YANDEX_BASE = "https://realty.yandex.ru";
-
 function buildYandexUrl(params: SearchParams, page = 1): string {
-  // Yandex Realty URL for commercial office rent in SPb
-  const url = new URL(`${YANDEX_BASE}/sankt-peterburg/snyat/ofis/`);
-  url.searchParams.set("officeType", "OFFICE");
-  url.searchParams.set("areaMin", String(params.minArea));
-  url.searchParams.set("areaMax", String(params.maxArea));
-  url.searchParams.set("priceMin", String(params.minPrice));
-  url.searchParams.set("priceMax", String(params.maxPrice));
-  url.searchParams.set("rentType", "MONTHLY");
+  // Correct URL for Yandex Real Estate office rentals in SPb
+  const url = new URL(
+    "https://realty.yandex.ru/sankt-peterburg/snyat/kommercheskaya-nedvizhimost/ofis/"
+  );
+  if (params.minArea) url.searchParams.set("areaMin", String(params.minArea));
+  if (params.maxArea) url.searchParams.set("areaMax", String(params.maxArea));
+  if (params.minPrice) url.searchParams.set("priceMin", String(params.minPrice));
+  if (params.maxPrice) url.searchParams.set("priceMax", String(params.maxPrice));
   if (page > 1) url.searchParams.set("page", String(page));
   return url.toString();
 }
 
-const HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-  "Accept-Language": "ru-RU,ru;q=0.9",
-  "Accept-Encoding": "gzip, deflate, br",
-  "Connection": "keep-alive",
-};
+export async function scrapeYandex(params: SearchParams): Promise<InsertListing[]> {
+  const results: InsertListing[] = [];
+  const { page, context } = await createStealthPage();
 
-// Also try Yandex API endpoint
-const YANDEX_API_URL = "https://realty.yandex.ru/gate/search/";
+  try {
+    const url = buildYandexUrl(params, 1);
+    console.log(`[Yandex] Navigating to: ${url}`);
 
-function buildYandexApiPayload(params: SearchParams, page = 1) {
-  return {
-    type: "RENT",
-    category: "COMMERCIAL",
-    commercialType: "OFFICE",
-    rgid: 417899, // Saint Petersburg region ID
-    areaMin: params.minArea,
-    areaMax: params.maxArea,
-    priceMin: params.minPrice,
-    priceMax: params.maxPrice,
-    rentType: "MONTHLY",
-    page: page - 1,
-    pageSize: 20,
-  };
-}
-
-function parseYandexHtml(html: string): InsertListing[] {
-  const $ = cheerio.load(html);
-  const listings: InsertListing[] = [];
-
-  // Try to extract JSON data embedded in page
-  const scriptContent = $("script[type='application/json']").first().html() ?? "";
-  if (scriptContent) {
     try {
-      const jsonData = JSON.parse(scriptContent);
-      const offers =
-        jsonData?.offers?.entities ??
-        jsonData?.searchQuery?.offers?.entities ??
-        [];
-
-      for (const offer of offers) {
-        const listing = parseYandexOffer(offer);
-        if (listing) listings.push(listing);
-      }
-      return listings;
-    } catch {
-      // Fall through to HTML parsing
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+    } catch (navErr) {
+      // Yandex may redirect; ignore navigation errors and check what we have
+      console.warn("[Yandex] Navigation warning:", navErr instanceof Error ? navErr.message : navErr);
     }
-  }
+    await page.waitForTimeout(5000);
 
-  // HTML fallback parsing
-  $("[class*='OfferCard'], [class*='offer-card'], [data-test='offer-card']").each((_, el) => {
+    let title = "";
     try {
-      const $el = $(el);
-      const id =
-        $el.attr("data-offer-id") ??
-        $el.find("[data-offer-id]").attr("data-offer-id") ??
-        "";
-      if (!id) return;
+      title = await page.title();
+    } catch {
+      title = "";
+    }
+    console.log(`[Yandex] Page title: ${title}`);
 
-      const title = $el.find("[class*='title'], [class*='Title']").first().text().trim();
-      const priceText = $el.find("[class*='price'], [class*='Price']").first().text().trim();
-      const price = parseInt(priceText.replace(/\D/g, ""), 10) || null;
+    if (
+      title.toLowerCase().includes("captcha") ||
+      title.toLowerCase().includes("robot") ||
+      title.includes("404")
+    ) {
+      console.warn("[Yandex] Blocked or 404");
+      return results;
+    }
 
-      const address = $el.find("[class*='address'], [class*='Address']").first().text().trim();
-      const metro = $el.find("[class*='metro'], [class*='Metro']").first().text().trim();
+    // Parse offer links and their container cards
+    const cards = await page.evaluate(() => {
+      const cardResults: Array<{
+        id: string;
+        href: string;
+        price: number | null;
+        area: number | null;
+        metro: string;
+        metroMin: number | null;
+        address: string;
+        title: string;
+      }> = [];
 
-      const areaMatch = title.match(/(\d+)\s*м²/);
-      const area = areaMatch ? parseInt(areaMatch[1], 10) : null;
+      const links = Array.from(document.querySelectorAll('a[href*="/offer/"]'));
+      const seenIds = new Set<string>();
 
-      const linkEl = $el.find("a[href*='/offer/']").first();
-      const href = linkEl.attr("href") ?? "";
-      const url = href.startsWith("http") ? href : `${YANDEX_BASE}${href}`;
+      for (const link of links) {
+        const href = (link as HTMLAnchorElement).href;
+        const idMatch = href.match(/\/offer\/(\d+)/);
+        if (!idMatch) continue;
+        const id = idMatch[1];
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
 
-      if (!url || url === YANDEX_BASE) return;
+        // Walk up to find the card container
+        let container: Element | null = link.parentElement;
+        let depth = 0;
+        while (container && depth < 12) {
+          const text = container.textContent ?? "";
+          if ((text.includes("₽") || text.includes("руб")) && text.includes("м²")) break;
+          container = container.parentElement;
+          depth++;
+        }
+        if (!container) continue;
 
-      listings.push({
+        const fullText = container.textContent ?? "";
+
+        // Extract price
+        const priceMatch = fullText.replace(/\s/g, "").match(/(\d{4,})\s*₽/);
+        const price = priceMatch ? parseInt(priceMatch[1]) : null;
+
+        // Extract area
+        const areaMatch = fullText.match(/(\d+[,.]?\d*)\s*м²/);
+        const area = areaMatch ? parseFloat(areaMatch[1].replace(",", ".")) : null;
+
+        // Extract metro
+        const metroEl = container.querySelector('[class*="metro"], [class*="Metro"], [class*="underground"], [class*="Underground"]');
+        let metro = "";
+        let metroMin: number | null = null;
+        if (metroEl) {
+          const metroText = metroEl.textContent ?? "";
+          const metroMatch = metroText.match(/^([^⋅•·\d]+)[⋅•·\s]+(\d+)\s*мин/);
+          if (metroMatch) {
+            metro = metroMatch[1].trim();
+            metroMin = parseInt(metroMatch[2]);
+          } else {
+            metro = metroText.trim().slice(0, 50);
+          }
+        }
+
+        // Extract address
+        const addressEl = container.querySelector('[class*="address"], [class*="Address"], [class*="location"], [class*="Location"]');
+        const address = addressEl?.textContent?.trim() ?? "";
+
+        // Title
+        const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
+        const titleText = titleEl?.textContent?.trim() ?? "";
+
+        cardResults.push({ id, href, price, area, metro, metroMin, address, title: titleText });
+      }
+
+      return cardResults;
+    });
+
+    console.log(`[Yandex] Parsed ${cards.length} cards`);
+
+    for (const card of cards) {
+      results.push({
         platform: "yandex",
-        platformId: id,
-        title: title || "Офис",
-        address,
-        metroStation: metro || undefined,
-        metroDistanceMin: null,
+        platformId: card.id,
+        title: card.title || null,
+        address: card.address || null,
+        district: null,
+        metroStation: card.metro || null,
+        metroDistanceMin: card.metroMin,
         metroDistanceType: "foot",
-        price,
-        area,
+        price: card.price,
+        area: card.area,
         floor: null,
         totalFloors: null,
         description: null,
         photos: [],
-        url,
+        url: card.href,
         phone: null,
         isNew: true,
         isSent: false,
+        firstSeen: new Date(),
+        lastSeen: new Date(),
       });
-    } catch (err) {
-      console.warn("[Yandex] Error parsing card:", err);
     }
-  });
-
-  return listings;
-}
-
-function parseYandexOffer(offer: Record<string, unknown>): InsertListing | null {
-  try {
-    const id = String(offer.offerId ?? offer.id ?? "");
-    if (!id) return null;
-
-    const building = (offer.building as Record<string, unknown>) ?? {};
-    const location = (offer.location as Record<string, unknown>) ?? {};
-    const price = (offer.price as Record<string, unknown>) ?? {};
-    const area = (offer.area as Record<string, unknown>) ?? {};
-
-    const metroList = (location.metro as Array<Record<string, unknown>>) ?? [];
-    const metro = metroList[0];
-
-    const photos = ((offer.photos as Array<Record<string, unknown>>) ?? [])
-      .slice(0, 5)
-      .map((p) => (p.fullUrl as string) ?? (p.appMiddleSnippetUrl as string) ?? "")
-      .filter(Boolean);
-
-    return {
-      platform: "yandex",
-      platformId: id,
-      title: (offer.roomsTotal as string) ? `Офис ${area.value ?? ""}м²` : "Офис",
-      address: (location.address as string) ?? "",
-      metroStation: (metro?.name as string) ?? undefined,
-      metroDistanceMin: (metro?.timeOnFoot as number) ?? null,
-      metroDistanceType: "foot",
-      price: (price.value as number) ?? null,
-      area: (area.value as number) ?? null,
-      floor: (building.builtYear as number) ? null : (offer.floorsOffered as number) ?? null,
-      totalFloors: (building.floors as number) ?? null,
-      description: (offer.description as string) ?? null,
-      photos,
-      url: `${YANDEX_BASE}/offer/${id}/`,
-      phone: null,
-      isNew: true,
-      isSent: false,
-    };
-  } catch {
-    return null;
-  }
-}
-
-export async function scrapeYandex(params: SearchParams): Promise<InsertListing[]> {
-  const results: InsertListing[] = [];
-  const maxPages = 3;
-
-  for (let page = 1; page <= maxPages; page++) {
-    try {
-      const url = buildYandexUrl(params, page);
-      console.log(`[Yandex] Fetching page ${page}: ${url}`);
-
-      const response = await fetch(url, {
-        headers: HEADERS,
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (!response.ok) {
-        console.warn(`[Yandex] HTTP ${response.status} on page ${page}`);
-        break;
-      }
-
-      const html = await response.text();
-
-      if (html.includes("captcha") || html.length < 3000) {
-        console.warn("[Yandex] Possible block detected");
-        break;
-      }
-
-      const pageListings = parseYandexHtml(html);
-      if (pageListings.length === 0) break;
-
-      results.push(...pageListings);
-
-      await new Promise((r) => setTimeout(r, 2000));
-    } catch (err) {
-      console.error(`[Yandex] Error on page ${page}:`, err);
-      break;
-    }
+  } catch (err) {
+    console.error("[Yandex] Scraper error:", err instanceof Error ? err.message : err);
+  } finally {
+    await context.close();
   }
 
-  console.log(`[Yandex] Scraped ${results.length} listings`);
+  console.log(`[Yandex] Total scraped: ${results.length} listings`);
   return results;
 }

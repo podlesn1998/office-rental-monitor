@@ -1,5 +1,5 @@
-import * as cheerio from "cheerio";
 import type { InsertListing } from "../../drizzle/schema";
+import { createStealthPage } from "./browser";
 
 interface SearchParams {
   minArea: number;
@@ -13,17 +13,6 @@ interface SearchParams {
 // CIAN metro IDs for Saint Petersburg (from the original search URL)
 const SPB_METRO_IDS = [174, 175, 176, 177, 194, 206, 207, 221, 222];
 
-const USER_AGENTS = [
-  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.105 Mobile Safari/537.36",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-];
-
-function randomUA() {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-}
-
 function buildCianUrl(params: SearchParams, page = 1): string {
   const metroParams = SPB_METRO_IDS.map((id, i) => `metro%5B${i}%5D=${id}`).join("&");
   return (
@@ -35,282 +24,237 @@ function buildCianUrl(params: SearchParams, page = 1): string {
   );
 }
 
-function buildCianApiPayload(params: SearchParams, page = 1) {
-  return {
-    jsonQuery: {
-      _type: "commercialrent",
-      engine_version: { type: "term", value: 2 },
-      region: { type: "terms", value: [2] },
-      deal_type: { type: "term", value: "rent" },
-      offer_type: { type: "terms", value: ["offices"] },
-      office_type: { type: "terms", value: [5] },
-      total_area: { type: "range", value: { gte: params.minArea, lte: params.maxArea } },
-      price: { type: "range", value: { gte: params.minPrice, lte: params.maxPrice } },
-      foot_min: { type: "range", value: { lte: params.footMin } },
-      only_foot: { type: "term", value: "2" },
-      metro: { type: "terms", value: SPB_METRO_IDS },
-      currency: { type: "term", value: 2 },
-      page: { type: "term", value: page },
-    },
-  };
-}
+export async function scrapeCian(params: SearchParams): Promise<InsertListing[]> {
+  const results: InsertListing[] = [];
+  const { page, context } = await createStealthPage();
 
-function parseCianApiListing(offer: Record<string, unknown>): InsertListing | null {
   try {
-    const id = String(offer.id ?? offer.cianId ?? "");
-    if (!id) return null;
+    const url = buildCianUrl(params, 1);
+    console.log(`[CIAN] Navigating to: ${url}`);
 
-    const geo = (offer.geo as Record<string, unknown>) ?? {};
-    const address =
-      (geo.userInput as string) ??
-      ((geo.address as { fullAddress?: string })?.fullAddress) ??
-      "";
+    await page.goto(url, { waitUntil: "load", timeout: 35000 });
+    await page.waitForTimeout(4000);
 
-    const undergrounds = (geo.undergrounds as Array<Record<string, unknown>>) ?? [];
-    const metro = undergrounds[0];
-    const metroStation = metro ? ((metro.name as string) ?? null) : null;
-    const metroDistanceMin = metro ? ((metro.travelTime as number) ?? null) : null;
-    const metroDistanceType = metro ? ((metro.travelType as string) ?? "foot") : null;
+    const title = await page.title();
+    console.log(`[CIAN] Page title: ${title}`);
 
-    const priceInfo = (offer.bargainTerms as Record<string, unknown>) ?? {};
-    const price = (priceInfo.priceRur as number) ?? (priceInfo.price as number) ?? null;
-
-    const totalArea = (offer.totalArea as number) ?? null;
-    const floorNumber = (offer.floorNumber as number) ?? null;
-    const building = (offer.building as Record<string, unknown>) ?? {};
-    const totalFloors = (building.floorsCount as number) ?? null;
-
-    const photos = ((offer.photos as Array<Record<string, unknown>>) ?? [])
-      .slice(0, 5)
-      .map((p) => (p.fullUrl as string) ?? (p.miniUrl as string) ?? "")
-      .filter(Boolean);
-
-    const cianUrl = (offer.fullUrl as string) ?? `https://spb.cian.ru/rent/commercial/${id}/`;
-
-    return {
-      platform: "cian",
-      platformId: id,
-      title: null,
-      address: address || null,
-      district: null,
-      metroStation,
-      metroDistanceMin,
-      metroDistanceType,
-      price,
-      area: totalArea,
-      floor: floorNumber,
-      totalFloors,
-      description: (offer.description as string) ?? null,
-      photos,
-      url: cianUrl,
-      phone: null,
-      isNew: true,
-      isSent: false,
-      firstSeen: new Date(),
-      lastSeen: new Date(),
-    };
-  } catch {
-    return null;
-  }
-}
-
-async function scrapeCianApi(params: SearchParams): Promise<InsertListing[]> {
-  const results: InsertListing[] = [];
-
-  // Try multiple API endpoints
-  const apiEndpoints = [
-    "https://api.cian.ru/search-offers/v2/search-offers-desktop/",
-    "https://api.cian.ru/search-offers/v2/search-offers-mobile/",
-  ];
-
-  for (const apiUrl of apiEndpoints) {
-    if (results.length > 0) break;
-
-    for (let page = 1; page <= 3; page++) {
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "User-Agent": randomUA(),
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "ru-RU,ru;q=0.9",
-            "Content-Type": "application/json",
-            "Origin": "https://spb.cian.ru",
-            "Referer": buildCianUrl(params, page),
-            "X-Source": "cian",
-          },
-          body: JSON.stringify(buildCianApiPayload(params, page)),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        const text = await response.text();
-        if (!text.startsWith("{")) {
-          console.log(`[CIAN API] ${apiUrl}: non-JSON response (blocked)`);
-          break;
-        }
-
-        const data = JSON.parse(text) as Record<string, unknown>;
-        const dataObj = (data.data as Record<string, unknown>) ?? {};
-        const offers =
-          (dataObj.offersSerpData as Array<Record<string, unknown>>) ??
-          (dataObj.offersSerialized as Array<Record<string, unknown>>) ??
-          [];
-
-        if (offers.length === 0) break;
-
-        for (const offer of offers) {
-          const listing = parseCianApiListing(offer);
-          if (listing) results.push(listing);
-        }
-
-        const paging = dataObj.paging as Record<string, unknown>;
-        const totalPages = (paging?.pageCount as number) ?? 1;
-        if (page >= totalPages || offers.length < 20) break;
-        await new Promise((r) => setTimeout(r, 2000));
-      } catch (err) {
-        console.log(`[CIAN API] Error on page ${page}:`, err instanceof Error ? err.message : err);
-        break;
-      }
+    if (title.toLowerCase().includes("captcha") || title.toLowerCase().includes("robot")) {
+      console.warn("[CIAN] Captcha detected");
+      return results;
     }
-  }
 
-  return results;
-}
+    // Parse offer cards from DOM using the approach that works
+    const cards = await page.evaluate(() => {
+      const cardResults: Array<{
+        id: string;
+        href: string;
+        price: number | null;
+        area: number | null;
+        metro: string;
+        metroMin: number | null;
+        address: string;
+        imgSrc: string;
+        title: string;
+      }> = [];
 
-async function scrapeCianHtml(params: SearchParams): Promise<InsertListing[]> {
-  const results: InsertListing[] = [];
+      const links = Array.from(document.querySelectorAll('a[href*="/rent/commercial/"]'));
+      const seenIds = new Set<string>();
 
-  for (let page = 1; page <= 2; page++) {
-    try {
-      const url = buildCianUrl(params, page);
-      console.log(`[CIAN HTML] Fetching page ${page}`);
+      for (const link of links) {
+        const href = (link as HTMLAnchorElement).href;
+        const idMatch = href.match(/\/rent\/commercial\/(\d+)/);
+        if (!idMatch) continue;
+        const id = idMatch[1];
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
 
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": randomUA(),
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-          "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-          "Accept-Encoding": "gzip, deflate, br",
-          "Connection": "keep-alive",
-          "Upgrade-Insecure-Requests": "1",
-          "Sec-Fetch-Dest": "document",
-          "Sec-Fetch-Mode": "navigate",
-          "Sec-Fetch-Site": "none",
-          "Cache-Control": "max-age=0",
-        },
-        signal: AbortSignal.timeout(20000),
-      });
+        // Walk up to find the card container (has both price and area)
+        let container: Element | null = link.parentElement;
+        let depth = 0;
+        while (container && depth < 12) {
+          const text = container.textContent ?? "";
+          if (text.includes("₽/мес") && text.includes("м²")) break;
+          container = container.parentElement;
+          depth++;
+        }
+        if (!container) continue;
 
-      const html = await response.text();
+        // Extract price from dedicated price element
+        const priceEl = container.querySelector('[class*="price"], [class*="Price"]');
+        let price: number | null = null;
+        if (priceEl) {
+          const priceText = priceEl.textContent ?? "";
+          const priceMatch = priceText.replace(/\s/g, "").match(/(\d{4,})/);
+          if (priceMatch) price = parseInt(priceMatch[1]);
+        }
 
-      // Try to find JSON embedded in script tags
-      const scriptMatches = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) ?? [];
-      for (const script of scriptMatches) {
-        const dataMatch = script.match(/"offersSerpData"\s*:\s*(\[[\s\S]*?\])\s*[,}]/);
-        if (dataMatch) {
-          try {
-            const offers = JSON.parse(dataMatch[1]) as Array<Record<string, unknown>>;
-            for (const offer of offers) {
-              const listing = parseCianApiListing(offer);
-              if (listing) results.push(listing);
-            }
-            if (results.length > 0) break;
-          } catch {
-            // continue
+        // Extract area - look for "м²" pattern
+        const fullText = container.textContent ?? "";
+        const areaMatch = fullText.match(/(\d+[,.]?\d*)\s*м²/);
+        const area = areaMatch ? parseFloat(areaMatch[1].replace(",", ".")) : null;
+
+        // Extract metro station and distance
+        const metroEl = container.querySelector('[class*="underground"], [class*="metro"]');
+        let metro = "";
+        let metroMin: number | null = null;
+        if (metroEl) {
+          const metroText = metroEl.textContent ?? "";
+          // Try to split metro name from distance
+          const metroMatch = metroText.match(/^([^⋅•·]+)[⋅•·]\s*(\d+)\s*мин/);
+          if (metroMatch) {
+            metro = metroMatch[1].trim();
+            metroMin = parseInt(metroMatch[2]);
+          } else {
+            metro = metroText.trim();
           }
         }
+
+        // Extract address - find address element that doesn't contain metro
+        let address = "";
+        const addressEls = container.querySelectorAll('[class*="address"], [class*="Address"]');
+        for (const addrEl of Array.from(addressEls)) {
+          const text = addrEl.textContent?.trim() ?? "";
+          if (text && !text.includes("⋅") && text.length > 5) {
+            address = text;
+            break;
+          }
+        }
+        // Fallback: extract address from full text after metro
+        if (!address && metro) {
+          const afterMetro = fullText.split(metro).pop() ?? "";
+          const addrMatch = afterMetro.match(/Санкт-Петербург[^,\n]{0,100}/);
+          if (addrMatch) address = addrMatch[0].trim();
+        }
+
+        // Get image
+        const imgEl = container.querySelector("img");
+        const imgSrc = (imgEl?.src ?? imgEl?.getAttribute("data-src") ?? "").slice(0, 200);
+
+        // Get title/building name
+        const titleEl = container.querySelector('[class*="title"], [class*="Title"], [class*="name"]');
+        const titleText = titleEl?.textContent?.trim() ?? "";
+
+        cardResults.push({ id, href, price, area, metro, metroMin, address, imgSrc, title: titleText });
       }
 
-      if (results.length > 0) break;
+      return cardResults;
+    });
 
-      // HTML card parsing fallback
-      const $ = cheerio.load(html);
+    console.log(`[CIAN] Parsed ${cards.length} cards from page 1`);
 
-      const selectors = [
-        '[data-name="CardComponent"]',
-        'article[data-id]',
-        '[class*="offer-card"]',
-        '[class*="OfferCard"]',
-        '[data-testid*="offer"]',
-      ];
+    for (const card of cards) {
+      // Clean up the href - remove tracking params
+      const cleanUrl = card.href.split("?")[0];
 
-      let cards = $();
-      for (const sel of selectors) {
-        cards = $(sel);
-        if (cards.length > 0) break;
-      }
-
-      if (cards.length === 0) {
-        console.log(`[CIAN HTML] No listing cards found on page ${page} (likely blocked)`);
-        break;
-      }
-
-      cards.each((_, el) => {
-        const card = $(el);
-        const link = card.find("a").filter((_, a) => {
-          const href = $(a).attr("href") ?? "";
-          return href.includes("/rent/commercial/") || href.includes("cian.ru");
-        }).first();
-        const href = link.attr("href");
-        if (!href) return;
-
-        const idMatch = href.match(/\/(\d+)\/?$/);
-        const platformId = idMatch ? idMatch[1] : href.replace(/\W/g, "").slice(-20);
-
-        const priceText = card.find('[data-testid*="price"], [class*="price"]').first().text();
-        const priceMatch = priceText.replace(/\s/g, "").match(/(\d{4,})/);
-        const price = priceMatch ? parseInt(priceMatch[1]) : null;
-
-        const areaText = card.find('[class*="area"], [data-testid*="area"]').first().text();
-        const areaMatch = areaText.match(/(\d+)/);
-        const area = areaMatch ? parseInt(areaMatch[1]) : null;
-
-        const address = card.find('[class*="address"], [data-testid*="address"]').first().text().trim() || null;
-        const metro = card.find('[class*="underground"], [data-testid*="underground"]').first().text().trim() || null;
-
-        results.push({
-          platform: "cian",
-          platformId,
-          title: null,
-          address,
-          district: null,
-          metroStation: metro,
-          metroDistanceMin: null,
-          metroDistanceType: "foot",
-          price,
-          area,
-          floor: null,
-          totalFloors: null,
-          description: null,
-          photos: [],
-          url: href.startsWith("http") ? href : `https://spb.cian.ru${href}`,
-          phone: null,
-          isNew: true,
-          isSent: false,
-          firstSeen: new Date(),
-          lastSeen: new Date(),
-        });
+      results.push({
+        platform: "cian",
+        platformId: card.id,
+        title: card.title || null,
+        address: card.address || null,
+        district: null,
+        metroStation: card.metro || null,
+        metroDistanceMin: card.metroMin,
+        metroDistanceType: "foot",
+        price: card.price,
+        area: card.area,
+        floor: null,
+        totalFloors: null,
+        description: null,
+        photos: card.imgSrc ? [card.imgSrc] : [],
+        url: cleanUrl || card.href,
+        phone: null,
+        isNew: true,
+        isSent: false,
+        firstSeen: new Date(),
+        lastSeen: new Date(),
       });
-
-      if (results.length > 0) break;
-      await new Promise((r) => setTimeout(r, 3000));
-    } catch (err) {
-      console.log(`[CIAN HTML] Error on page ${page}:`, err instanceof Error ? err.message : err);
-      break;
     }
+
+    // Try page 2 if we got results
+    if (results.length > 0) {
+      try {
+        const url2 = buildCianUrl(params, 2);
+        await page.goto(url2, { waitUntil: "load", timeout: 30000 });
+        await page.waitForTimeout(3000);
+
+        const cards2 = await page.evaluate(() => {
+          const res: Array<{ id: string; href: string; price: number | null; area: number | null; metro: string; metroMin: number | null; address: string }> = [];
+          const links = Array.from(document.querySelectorAll('a[href*="/rent/commercial/"]'));
+          const seen = new Set<string>();
+          for (const link of links) {
+            const href = (link as HTMLAnchorElement).href;
+            const idMatch = href.match(/\/rent\/commercial\/(\d+)/);
+            if (!idMatch) continue;
+            const id = idMatch[1];
+            if (seen.has(id)) continue;
+            seen.add(id);
+            let container: Element | null = link.parentElement;
+            let depth = 0;
+            while (container && depth < 12) {
+              const t = container.textContent ?? "";
+              if (t.includes("₽/мес") && t.includes("м²")) break;
+              container = container.parentElement;
+              depth++;
+            }
+            if (!container) continue;
+            const priceEl = container.querySelector('[class*="price"]');
+            const priceMatch = (priceEl?.textContent ?? "").replace(/\s/g, "").match(/(\d{4,})/);
+            const price = priceMatch ? parseInt(priceMatch[1]) : null;
+            const areaMatch = (container.textContent ?? "").match(/(\d+[,.]?\d*)\s*м²/);
+            const area = areaMatch ? parseFloat(areaMatch[1].replace(",", ".")) : null;
+            const metroEl = container.querySelector('[class*="underground"]');
+            const metroText = metroEl?.textContent ?? "";
+            const metroMatch = metroText.match(/^([^⋅•·]+)[⋅•·]\s*(\d+)\s*мин/);
+            res.push({
+              id,
+              href: href.split("?")[0],
+              price,
+              area,
+              metro: metroMatch ? metroMatch[1].trim() : metroText.trim(),
+              metroMin: metroMatch ? parseInt(metroMatch[2]) : null,
+              address: "",
+            });
+          }
+          return res;
+        });
+
+        console.log(`[CIAN] Parsed ${cards2.length} cards from page 2`);
+        const existingIds = new Set(results.map((r) => r.platformId));
+        for (const card of cards2) {
+          if (existingIds.has(card.id)) continue;
+          results.push({
+            platform: "cian",
+            platformId: card.id,
+            title: null,
+            address: card.address || null,
+            district: null,
+            metroStation: card.metro || null,
+            metroDistanceMin: card.metroMin,
+            metroDistanceType: "foot",
+            price: card.price,
+            area: card.area,
+            floor: null,
+            totalFloors: null,
+            description: null,
+            photos: [],
+            url: card.href,
+            phone: null,
+            isNew: true,
+            isSent: false,
+            firstSeen: new Date(),
+            lastSeen: new Date(),
+          });
+        }
+      } catch (e) {
+        console.warn("[CIAN] Page 2 failed:", e instanceof Error ? e.message : e);
+      }
+    }
+  } catch (err) {
+    console.error("[CIAN] Scraper error:", err instanceof Error ? err.message : err);
+  } finally {
+    await context.close();
   }
 
-  return results;
-}
-
-export async function scrapeCian(params: SearchParams): Promise<InsertListing[]> {
-  let results = await scrapeCianApi(params);
-
-  if (results.length === 0) {
-    console.log("[CIAN] API blocked, trying HTML scraping...");
-    results = await scrapeCianHtml(params);
-  }
-
-  console.log(`[CIAN] Scraped ${results.length} listings`);
+  console.log(`[CIAN] Total scraped: ${results.length} listings`);
   return results;
 }

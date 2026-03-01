@@ -57,6 +57,13 @@
 - [x] All 17 tests passing
 
 ## Known Limitations
-- [ ] CIAN/Avito/Yandex block direct server-side scraping (anti-bot protection)
-  → Workaround: manual listing addition available via web UI
-  → Scrapers retry automatically every 30 minutes
+- [x] CIAN: Playwright headless browser bypass → 25+ listings found per cycle
+- [x] Yandex: Playwright headless browser bypass → 23+ listings found per cycle
+- [ ] Avito: datacenter IP blocked — requires residential proxy to scrape
+
+## Bug Fixes
+- [x] Scrapers return 0 results — fixed with Playwright headless browser
+- [x] CIAN: --user-data-dir Playwright error → removed invalid arg
+- [x] CIAN: correct DOM selectors found → a[href*="/rent/commercial/"]
+- [x] Yandex: navigation error fixed with try/catch wrapper
+- [x] Avito: graceful skip with informative log message when IP blocked
