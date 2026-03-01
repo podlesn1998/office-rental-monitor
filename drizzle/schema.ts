@@ -75,6 +75,7 @@ export const searchConfig = mysqlTable("searchConfig", {
   minFloor: int("minFloor"), // optional floor filter
   maxFloor: int("maxFloor"),
   keywords: json("keywords").$type<string[]>(), // optional keywords to filter by in title/description
+  districts: json("districts").$type<string[]>(), // optional SPb district filter (empty = all districts)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

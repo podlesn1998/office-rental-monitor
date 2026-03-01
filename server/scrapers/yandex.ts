@@ -176,6 +176,18 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
     await context.close();
   }
 
+  // Filter by selected districts if any are specified
+  if (params.districts && params.districts.length > 0) {
+    const before = results.length;
+    const filtered = results.filter((r) => {
+      if (!r.address) return true;
+      const addr = r.address.toLowerCase();
+      return params.districts.some((d) => addr.includes(d.toLowerCase()));
+    });
+    console.log(`[Yandex] District filter: ${before} → ${filtered.length} listings`);
+    return filtered;
+  }
+
   console.log(`[Yandex] Total scraped: ${results.length} listings`);
   return results;
 }

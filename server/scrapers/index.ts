@@ -28,6 +28,7 @@ export interface SearchParams {
   minFloor?: number | null;
   maxFloor?: number | null;
   keywords: string[];
+  districts: string[];
 }
 
 /**
@@ -165,6 +166,7 @@ async function loadSearchConfig(): Promise<SearchParams & { enableCian: boolean;
     minFloor: config?.minFloor ?? null,
     maxFloor: config?.maxFloor ?? null,
     keywords: (config?.keywords as string[]) ?? [],
+    districts: (config?.districts as string[]) ?? [],
     enableCian: config?.enableCian ?? true,
     enableAvito: config?.enableAvito ?? true,
     enableYandex: config?.enableYandex ?? true,

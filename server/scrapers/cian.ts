@@ -189,6 +189,18 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
     await context.close();
   }
 
+  // Filter by selected districts if any are specified
+  if (params.districts && params.districts.length > 0) {
+    const before = results.length;
+    const filtered = results.filter((r) => {
+      if (!r.address) return true; // keep if no address info
+      const addr = r.address.toLowerCase();
+      return params.districts.some((d) => addr.includes(d.toLowerCase()));
+    });
+    console.log(`[CIAN] District filter: ${before} → ${filtered.length} listings`);
+    return filtered;
+  }
+
   console.log(`[CIAN] Total scraped: ${results.length} listings`);
   return results;
 }

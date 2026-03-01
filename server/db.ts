@@ -155,6 +155,7 @@ export async function updateSearchConfig(
     minFloor: number | null;
     maxFloor: number | null;
     keywords: string[];
+    districts: string[];
   }>
 ) {
   const db = await getDb();
@@ -178,6 +179,7 @@ export async function updateSearchConfig(
       minFloor: data.minFloor ?? null,
       maxFloor: data.maxFloor ?? null,
       keywords: data.keywords ?? [],
+      districts: data.districts ?? [],
     });
   } else {
     // Build update object, handling null values explicitly
@@ -198,6 +200,7 @@ export async function updateSearchConfig(
     if (data.minFloor !== undefined) updateData.minFloor = data.minFloor;
     if (data.maxFloor !== undefined) updateData.maxFloor = data.maxFloor;
     if (data.keywords !== undefined) updateData.keywords = data.keywords;
+    if (data.districts !== undefined) updateData.districts = data.districts;
     await db.update(searchConfig).set(updateData).where(eq(searchConfig.id, existing[0].id));
   }
 }

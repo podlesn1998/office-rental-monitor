@@ -74,6 +74,7 @@ export const appRouter = router({
           minFloor: z.number().min(1).nullable().optional(),
           maxFloor: z.number().min(1).nullable().optional(),
           keywords: z.array(z.string()).optional(),
+          districts: z.array(z.string()).optional(),
         })
       )
       .mutation(async ({ input }) => {

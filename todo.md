@@ -78,3 +78,14 @@
 - [x] Update Avito scraper to use area/price from DB config
 - [x] Fix Yandex scraper: wait for cards selector before parsing
 - [x] Add graceful browser shutdown on SIGTERM/SIGINT
+
+## Feature: SPb District Filter (COMPLETED)
+- [x] Add districts JSON column to searchConfig table
+- [x] Update tRPC searchConfig.update to accept districts array
+- [x] Update db.ts updateSearchConfig to persist districts
+- [x] Add district multi-select UI to Settings page (all 18 SPb districts)
+- [x] Update CIAN scraper to filter results by selected districts
+- [x] Update Yandex scraper to filter results by selected districts
+- [ ] Update CIAN scraper to pass district filter in URL
+- [ ] Update Yandex scraper to pass district filter in URL
+- [ ] Post-filter listings by district if scraper can't filter natively

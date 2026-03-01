@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Settings2, MapPin, DollarSign, Maximize2, Train, Save, X, Plus,
-  Building2, Layers, Search, ChevronDown, ChevronUp, Tag,
+  Building2, Layers, Search, ChevronDown, ChevronUp, Tag, Map,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,6 +65,28 @@ const METRO_LINES: { line: string; color: string; stations: string[] }[] = [
 ];
 
 const ALL_STATIONS = METRO_LINES.flatMap((l) => l.stations);
+
+// All SPb districts
+const SPB_DISTRICTS = [
+  "Адмиралтейский",
+  "Василеостровский",
+  "Выборгский",
+  "Калининский",
+  "Кировский",
+  "Колпинский",
+  "Красногвардейский",
+  "Красносельский",
+  "Кронштадтский",
+  "Курортный",
+  "Московский",
+  "Невский",
+  "Петроградский",
+  "Петродворцовый",
+  "Приморский",
+  "Пушкинский",
+  "Фрунзенский",
+  "Центральный",
+];
 
 const OFFICE_TYPES = [
   { value: "office", label: "Офис" },
@@ -152,6 +174,10 @@ export default function Settings() {
   const [enableAvito, setEnableAvito] = useState(true);
   const [enableYandex, setEnableYandex] = useState(true);
 
+  // Districts
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [showDistricts, setShowDistricts] = useState(false);
+
   // Keywords
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState("");
@@ -174,6 +200,7 @@ export default function Settings() {
       setMinFloor(config.minFloor ?? null);
       setMaxFloor(config.maxFloor ?? null);
       setKeywords((config.keywords as string[]) ?? []);
+      setSelectedDistricts((config.districts as string[]) ?? []);
     }
   }, [config]);
 
@@ -224,6 +251,7 @@ export default function Settings() {
       minFloor: minFloor ?? undefined,
       maxFloor: maxFloor ?? undefined,
       keywords,
+      districts: selectedDistricts,
     });
   };
 
@@ -546,6 +574,74 @@ export default function Settings() {
               <p className="text-xs text-muted-foreground mt-2">
                 Оставьте пустым для поиска на всех этажах
               </p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Districts (collapsible) ── */}
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <button
+            onClick={() => setShowDistricts(!showDistricts)}
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Map size={16} className="text-primary" />
+              <span className="font-medium text-foreground">Районы СПб</span>
+              {selectedDistricts.length > 0 ? (
+                <span className="text-xs bg-primary/15 text-primary px-2 py-0.5 rounded-full">
+                  {selectedDistricts.length} выбрано
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">все районы</span>
+              )}
+            </div>
+            {showDistricts ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+          </button>
+          {showDistricts && (
+            <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Оставьте пустым для поиска по всем районам. Фильтрация применяется к адресу объявления.
+              </p>
+              <div className="flex gap-2 mb-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7"
+                  onClick={() => setSelectedDistricts([...SPB_DISTRICTS])}
+                >
+                  Все
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7"
+                  onClick={() => setSelectedDistricts([])}
+                >
+                  Сбросить
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {SPB_DISTRICTS.map((district) => {
+                  const selected = selectedDistricts.includes(district);
+                  return (
+                    <button
+                      key={district}
+                      onClick={() =>
+                        setSelectedDistricts((prev) =>
+                          selected ? prev.filter((d) => d !== district) : [...prev, district]
+                        )
+                      }
+                      className={`text-left text-xs px-3 py-2 rounded-xl border transition-colors ${
+                        selected
+                          ? "bg-primary/15 border-primary/40 text-primary font-medium"
+                          : "bg-background border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground"
+                      }`}
+                    >
+                      {district}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
