@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, notInArray, sql, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, notInArray, sql, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -218,6 +218,8 @@ export async function updateSearchConfig(
       await db.delete(listings).where(
         and(isNotNull(listings.district), notInArray(listings.district, data.districts))
       );
+      // Also delete listings with null district (cannot verify they belong to selected districts)
+      await db.delete(listings).where(isNull(listings.district));
       console.log(`[Config] Cleaned listings not in districts: ${data.districts.join(", ")}`);
     }
   }

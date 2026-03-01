@@ -217,14 +217,21 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
   }
 
   // Filter by selected districts if any are specified
+  // Also try to extract district from title for CIAN listings that have no address
+  for (const r of results) {
+    if (!r.district) {
+      // Try extracting district from title (e.g. "6-я Васильевского острова линия")
+      r.district = guessDistrict(r.title) ?? guessDistrict(r.address);
+    }
+  }
+
   if (params.districts && params.districts.length > 0) {
     const before = results.length;
     const filtered = results.filter((r) => {
-      if (!r.address) return true; // keep if no address info
-      const addr = r.address.toLowerCase();
-      return params.districts.some((d) => addr.includes(d.toLowerCase()));
+      if (!r.district) return false; // exclude if district cannot be determined
+      return params.districts.includes(r.district);
     });
-    console.log(`[CIAN] District filter: ${before} → ${filtered.length} listings`);
+    console.log(`[CIAN] District filter: ${before} → ${filtered.length} listings (districts: ${params.districts.join(", ")})`);
     return filtered;
   }
 

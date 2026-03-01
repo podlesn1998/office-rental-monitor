@@ -208,11 +208,10 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
   if (params.districts && params.districts.length > 0) {
     const before = results.length;
     const filtered = results.filter((r) => {
-      if (!r.address) return true;
-      const addr = r.address.toLowerCase();
-      return params.districts.some((d) => addr.includes(d.toLowerCase()));
+      if (!r.district) return false; // exclude if district cannot be determined
+      return params.districts.includes(r.district);
     });
-    console.log(`[Yandex] District filter: ${before} → ${filtered.length} listings`);
+    console.log(`[Yandex] District filter: ${before} → ${filtered.length} listings (districts: ${params.districts.join(", ")})`);
     return filtered;
   }
 

@@ -85,12 +85,13 @@ function applyKeywordFilter(listing: InsertListing, keywords: string[]): boolean
 }
 
 /**
- * Apply district filter: keep listing if no districts configured, or if listing's
- * district matches one of the selected districts (or district is unknown).
+ * Apply district filter: keep listing only if no districts configured,
+ * or if listing's district matches one of the selected districts.
+ * Listings with unknown district are excluded when a filter is active.
  */
 function applyDistrictFilter(listing: InsertListing, districts: string[]): boolean {
   if (!districts || districts.length === 0) return true;
-  if (!listing.district) return true; // keep if district unknown
+  if (!listing.district) return false; // exclude if district unknown and filter is active
   return districts.includes(listing.district);
 }
 

@@ -134,3 +134,13 @@
 - [x] Added 9-я Советская and other Центральный streets to correct district
 - [x] Add auto-cleanup in saveSearchConfig: when districts change, re-classify all listings and delete non-matching
 - [x] Manually re-classified and cleaned DB: deleted 7 wrong-district listings, 1 listing now correctly Адмиралтейский
+
+## Bug: District Filter — Null Districts Pass Through + Wrong Detection (3rd pass — FIXED)
+- [x] Audit: 5 listings in DB all had wrong/null district (Заозёрная=Невский, Софийская=Фрунзенский, Пархоменко=Выборгский, CIAN without address)
+- [x] Fix applyDistrictFilter: null district now returns false (excluded) when filter is active
+- [x] Fix CIAN scraper: use guessDistrict() instead of text search; exclude null-district listings
+- [x] Fix Yandex scraper: use guessDistrict() + exclude null-district listings
+- [x] Add missing streets: Заозёрная (Невский), Софийская (Фрунзенский), Пархоменко (Выборгский), Артиллерийская (Центральный)
+- [x] Fix saveSearchConfig auto-cleanup: also delete null-district listings when filter is active
+- [x] Cleaned DB: all 5 wrong-district/null-district listings deleted
+- [x] All 34 tests passing
