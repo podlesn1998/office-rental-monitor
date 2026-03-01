@@ -175,3 +175,8 @@
 - [x] Fix: replace dynamic import('./db.js') with static import of updateListingStatus in telegram.ts
 - [x] Webhook registered: https://officerent-kommtgdc.manus.space/api/telegram/webhook
 - [x] All 34 tests passing
+
+## Feature: Date/Time on Listing Cards + Last Update Time
+- [ ] Check if createdAt field exists in listings schema
+- [ ] Add createdAt to listing card UI
+- [ ] Add last scrape time to page header

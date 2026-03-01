@@ -116,7 +116,7 @@ export async function getListings(opts: {
 
 export async function getListingStats() {
   const db = await getDb();
-  if (!db) return { total: 0, newCount: 0, cian: 0, avito: 0, yandex: 0 };
+  if (!db) return { total: 0, newCount: 0, cian: 0, avito: 0, yandex: 0, lastScrapeAt: null };
 
   const result = await db
     .select({
@@ -127,9 +127,17 @@ export async function getListingStats() {
     .from(listings)
     .groupBy(listings.platform);
 
-  const stats = { total: 0, newCount: 0, cian: 0, avito: 0, yandex: 0 };
+  const lastRow = await db
+    .select({ lastScrapeAt: sql<Date>`max(\`createdAt\`)` })
+    .from(listings)
+    .limit(1);
+
+  const stats: { total: number; newCount: number; cian: number; avito: number; yandex: number; lastScrapeAt: Date | null } = {
+    total: 0, newCount: 0, cian: 0, avito: 0, yandex: 0,
+    lastScrapeAt: lastRow[0]?.lastScrapeAt ?? null,
+  };
   for (const row of result) {
-    stats[row.platform] = Number(row.count);
+    (stats as Record<string, unknown>)[row.platform] = Number(row.count);
     stats.total += Number(row.count);
     stats.newCount += Number(row.newCount ?? 0);
   }

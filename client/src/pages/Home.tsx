@@ -15,6 +15,7 @@ import {
   Map,
   Eye,
   Star,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,6 +53,7 @@ interface ListingItem {
   url: string;
   isNew: boolean;
   status: ListingStatus;
+  createdAt: Date | string | null;
 }
 
 function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStatusChange: (id: number, status: ListingStatus) => void }) {
@@ -157,8 +159,15 @@ function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStat
         )}
 
         {listing.floor && (
-          <div className="text-xs text-muted-foreground mb-3">
+          <div className="text-xs text-muted-foreground mb-2">
             {listing.floor} этаж{listing.totalFloors ? ` из ${listing.totalFloors}` : ""}
+          </div>
+        )}
+
+        {listing.createdAt && (
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60 mb-3">
+            <Clock size={10} />
+            <span>Добавлено {new Date(listing.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
           </div>
         )}
 
@@ -271,10 +280,18 @@ export default function Home() {
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div className="flex items-center gap-2">
             <Building2 size={20} className="text-primary" />
-            <span className="font-semibold text-foreground">Офисы СПб</span>
-            {stats && (
-              <span className="text-xs text-muted-foreground">{stats.total} объявл.</span>
-            )}
+            <div>
+              <span className="font-semibold text-foreground">Офисы СПб</span>
+              {stats && (
+                <span className="text-xs text-muted-foreground ml-2">{stats.total} объявл.</span>
+              )}
+              {stats?.lastScrapeAt && (
+                <div className="text-[10px] text-muted-foreground/60 flex items-center gap-1 mt-0.5">
+                  <Clock size={9} />
+                  <span>Обновлено {new Date(stats.lastScrapeAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              )}
+            </div>
           </div>
           <Button
             size="sm"
