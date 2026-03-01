@@ -1,6 +1,7 @@
 import type { InsertListing } from "../../drizzle/schema";
 import { createStealthPage } from "./browser";
 import type { SearchParams } from "./index";
+import { guessDistrict } from "./district";
 
 // CIAN office type codes
 const OFFICE_TYPE_CODES: Record<string, number[]> = {
@@ -180,7 +181,7 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
             platformId: card.id,
             title: card.title || null,
             address: card.address || null,
-            district: null,
+            district: guessDistrict(card.address),
             metroStation: card.metro || null,
             metroDistanceMin: card.metroMin,
             metroDistanceType: params.transportType,

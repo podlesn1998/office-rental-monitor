@@ -113,3 +113,11 @@
 - [x] Add retry-after handling in sendTelegramMessage (reads retry_after from Telegram response)
 - [x] Add retry-after handling in sendPhoto path
 - [x] Increase default delay between messages from 1000ms to 2000ms
+
+## Feature: District on Listing Cards (COMPLETED)
+- [x] Check district column in DB — was null for all listings
+- [x] Create guessDistrict() utility with SPb district keyword rules (district.ts)
+- [x] Use guessDistrict() in CIAN and Yandex scrapers when building listing objects
+- [x] Backfill district for 18/25 existing listings in DB
+- [x] Show district badge on listing cards in Home.tsx ("Центральный р-н" etc.)
+- [x] Add 13 district detection unit tests (all passing)

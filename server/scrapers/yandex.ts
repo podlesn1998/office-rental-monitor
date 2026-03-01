@@ -1,6 +1,7 @@
 import type { InsertListing } from "../../drizzle/schema";
 import { createStealthPage } from "./browser";
 import type { SearchParams } from "./index";
+import { guessDistrict } from "./district";
 
 // Yandex office type URL segments
 const YANDEX_OFFICE_TYPE_PATH: Record<string, string> = {
@@ -173,7 +174,7 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
           platformId: card.id,
           title: card.title || null,
           address: card.address || null,
-          district: null,
+          district: guessDistrict(card.address),
           metroStation: card.metro || null,
           metroDistanceMin: card.metroMin,
           metroDistanceType: params.transportType,

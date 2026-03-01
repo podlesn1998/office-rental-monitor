@@ -12,6 +12,7 @@ import {
   Building2,
   Filter,
   Layers,
+  Map,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,7 @@ interface ListingItem {
   platformId: string;
   title: string | null;
   address: string | null;
+  district: string | null;
   metroStation: string | null;
   metroDistanceMin: number | null;
   price: number | null;
@@ -124,6 +126,15 @@ function ListingCard({ listing }: { listing: ListingItem }) {
           <div className="flex items-start gap-1.5 mb-2">
             <MapPin size={13} className="text-muted-foreground mt-0.5 shrink-0" />
             <span className="text-sm text-foreground/80 leading-tight">{listing.address}</span>
+          </div>
+        )}
+
+        {listing.district && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <Map size={12} className="text-primary/70 shrink-0" />
+            <span className="text-xs font-medium text-primary/80 bg-primary/10 px-2 py-0.5 rounded-full">
+              {listing.district} р-н
+            </span>
           </div>
         )}
 
