@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, notInArray, sql, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -202,6 +202,24 @@ export async function updateSearchConfig(
     if (data.keywords !== undefined) updateData.keywords = data.keywords;
     if (data.districts !== undefined) updateData.districts = data.districts;
     await db.update(searchConfig).set(updateData).where(eq(searchConfig.id, existing[0].id));
+
+    // When districts change, delete listings that no longer match
+    if (data.districts !== undefined && data.districts.length > 0) {
+      const { guessDistrict } = await import("./scrapers/district.js");
+      // Re-classify all listings first
+      const allListings = await db.select({ id: listings.id, address: listings.address, district: listings.district }).from(listings);
+      for (const row of allListings) {
+        const newDistrict = guessDistrict(row.address);
+        if (newDistrict !== row.district) {
+          await db.update(listings).set({ district: newDistrict }).where(eq(listings.id, row.id));
+        }
+      }
+      // Delete listings with known district that doesn't match
+      await db.delete(listings).where(
+        and(isNotNull(listings.district), notInArray(listings.district, data.districts))
+      );
+      console.log(`[Config] Cleaned listings not in districts: ${data.districts.join(", ")}`);
+    }
   }
 }
 

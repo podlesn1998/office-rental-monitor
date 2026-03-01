@@ -1,0 +1,21 @@
+{
+  "query": "SELECT district, COUNT(*) as cnt FROM listings GROUP BY district ORDER BY cnt DESC;\nSELECT districts FROM searchConfig WHERE active = 1 LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT district, COUNT(*) as cnt FROM listings GROUP BY district ORDER BY cnt DESC;\nSELECT districts FROM searchConfig WHERE active = 1 LIMIT 1;",
+  "rows": [
+    {
+      "district": "NULL",
+      "cnt": "7"
+    },
+    {
+      "district": "Центральный",
+      "cnt": "6"
+    }
+  ],
+  "messages": [
+    "districts",
+    "[\"Адмиралтейский\"]"
+  ],
+  "stdout": "district\tcnt\nNULL\t7\nЦентральный\t6\ndistricts\n[\"Адмиралтейский\"]\n",
+  "stderr": "",
+  "execution_time_ms": 420
+}

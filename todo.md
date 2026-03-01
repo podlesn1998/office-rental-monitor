@@ -127,3 +127,10 @@
 - [x] Add applyDistrictFilter() and wire it into the filter chain in index.ts
 - [x] Delete 12 existing listings from non-selected districts (Выборгский, Кировский, etc.)
 - [x] Add 4 unit tests for district filter logic (all 34 tests passing)
+
+## Bug: District Filter Still Not Working (2nd pass — FIXED)
+- [x] Diagnose: scraper ran again and re-added wrong-district listings; also Звенигородская was misclassified as Центральный
+- [x] Fix district.ts: moved Звенигородская, Серпуховская, Расстанная, Боровая etc. to Адмиралтейский
+- [x] Added 9-я Советская and other Центральный streets to correct district
+- [x] Add auto-cleanup in saveSearchConfig: when districts change, re-classify all listings and delete non-matching
+- [x] Manually re-classified and cleaned DB: deleted 7 wrong-district listings, 1 listing now correctly Адмиралтейский

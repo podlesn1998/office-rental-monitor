@@ -1,0 +1,88 @@
+{
+  "query": "SELECT id, platform, district, address FROM listings ORDER BY district, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platform, district, address FROM listings ORDER BY district, id;",
+  "rows": [
+    {
+      "id": "18",
+      "platform": "cian",
+      "district": "NULL",
+      "address": "NULL"
+    },
+    {
+      "id": "20",
+      "platform": "cian",
+      "district": "NULL",
+      "address": "NULL"
+    },
+    {
+      "id": "28",
+      "platform": "yandex",
+      "district": "NULL",
+      "address": "Заозёрная улица, 8"
+    },
+    {
+      "id": "30",
+      "platform": "yandex",
+      "district": "NULL",
+      "address": "9-я Советская улица, 4-6"
+    },
+    {
+      "id": "32",
+      "platform": "yandex",
+      "district": "NULL",
+      "address": "Софийская улица, 6к8"
+    },
+    {
+      "id": "39",
+      "platform": "yandex",
+      "district": "NULL",
+      "address": "9-я Советская улица, 4-6"
+    },
+    {
+      "id": "49",
+      "platform": "yandex",
+      "district": "NULL",
+      "address": "проспект Пархоменко, 10к2"
+    },
+    {
+      "id": "31",
+      "platform": "yandex",
+      "district": "Центральный",
+      "address": "Звенигородская улица, 9-11К"
+    },
+    {
+      "id": "34",
+      "platform": "yandex",
+      "district": "Центральный",
+      "address": "Апраксин переулок, 8"
+    },
+    {
+      "id": "37",
+      "platform": "yandex",
+      "district": "Центральный",
+      "address": "Казанская улица, 7"
+    },
+    {
+      "id": "40",
+      "platform": "yandex",
+      "district": "Центральный",
+      "address": "Захарьевская улица, 27"
+    },
+    {
+      "id": "41",
+      "platform": "yandex",
+      "district": "Центральный",
+      "address": "Лиговский проспект, 10/118"
+    },
+    {
+      "id": "44",
+      "platform": "yandex",
+      "district": "Центральный",
+      "address": "Лиговский проспект, 10/118"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatform\tdistrict\taddress\n18\tcian\tNULL\tNULL\n20\tcian\tNULL\tNULL\n28\tyandex\tNULL\tЗаозёрная улица, 8\n30\tyandex\tNULL\t9-я Советская улица, 4-6\n32\tyandex\tNULL\tСофийская улица, 6к8\n39\tyandex\tNULL\t9-я Советская улица, 4-6\n49\tyandex\tNULL\tпроспект Пархоменко, 10к2\n31\tyandex\tЦентральный\tЗвенигородская улица, 9-11К\n34\tyandex\tЦентральный\tАпраксин переулок, 8\n37\tyandex\tЦентральный\tКазанская улица, 7\n40\tyandex\tЦентральный\tЗахарьевская улица, 27\n41\tyandex\tЦентральный\tЛиговский проспект, 10/118\n44\tyandex\tЦентральный\tЛиговский проспект, 10/118\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}
