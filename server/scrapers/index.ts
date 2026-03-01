@@ -85,6 +85,16 @@ function applyKeywordFilter(listing: InsertListing, keywords: string[]): boolean
 }
 
 /**
+ * Apply district filter: keep listing if no districts configured, or if listing's
+ * district matches one of the selected districts (or district is unknown).
+ */
+function applyDistrictFilter(listing: InsertListing, districts: string[]): boolean {
+  if (!districts || districts.length === 0) return true;
+  if (!listing.district) return true; // keep if district unknown
+  return districts.includes(listing.district);
+}
+
+/**
  * Apply floor filter.
  */
 function applyFloorFilter(
@@ -205,15 +215,19 @@ export async function runPlatformScrape(platform: Platform): Promise<ScrapeResul
     else if (platform === "avito") scraped = await scrapeAvito(config);
     else if (platform === "yandex") scraped = await scrapeYandex(config);
 
-    // Apply keyword and floor filters
+    // Apply keyword, floor, and district filters
     const filtered = scraped.filter(
       (l) =>
         applyKeywordFilter(l, config.keywords) &&
-        applyFloorFilter(l, config.minFloor, config.maxFloor)
+        applyFloorFilter(l, config.minFloor, config.maxFloor) &&
+        applyDistrictFilter(l, config.districts)
     );
 
     if (filtered.length < scraped.length) {
-      console.log(`[Scraper] Filtered ${scraped.length - filtered.length} listings by keywords/floor`);
+      console.log(
+        `[Scraper] Filtered ${scraped.length - filtered.length} listings by keywords/floor/district` +
+        (config.districts.length > 0 ? ` (districts: ${config.districts.join(", ")})` : "")
+      );
     }
 
     // Deduplicate

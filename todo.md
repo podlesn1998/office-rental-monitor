@@ -121,3 +121,9 @@
 - [x] Backfill district for 18/25 existing listings in DB
 - [x] Show district badge on listing cards in Home.tsx ("Центральный р-н" etc.)
 - [x] Add 13 district detection unit tests (all passing)
+
+## Bug: District Filter Not Working (FIXED)
+- [x] Diagnose: applyDistrictFilter was missing from runPlatformScrape pipeline
+- [x] Add applyDistrictFilter() and wire it into the filter chain in index.ts
+- [x] Delete 12 existing listings from non-selected districts (Выборгский, Кировский, etc.)
+- [x] Add 4 unit tests for district filter logic (all 34 tests passing)

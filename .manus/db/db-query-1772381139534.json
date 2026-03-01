@@ -1,0 +1,40 @@
+{
+  "query": "SELECT districts FROM searchConfig WHERE active = 1 LIMIT 1;\nSELECT district, COUNT(*) as cnt FROM listings GROUP BY district ORDER BY cnt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT districts FROM searchConfig WHERE active = 1 LIMIT 1;\nSELECT district, COUNT(*) as cnt FROM listings GROUP BY district ORDER BY cnt DESC;",
+  "rows": [
+    {
+      "districts": "[\"Центральный\"]"
+    },
+    {
+      "districts": "district\tcnt"
+    },
+    {
+      "districts": "NULL\t7"
+    },
+    {
+      "districts": "Выборгский\t6"
+    },
+    {
+      "districts": "Центральный\t6"
+    },
+    {
+      "districts": "Красногвардейский\t2"
+    },
+    {
+      "districts": "Адмиралтейский\t1"
+    },
+    {
+      "districts": "Петроградский\t1"
+    },
+    {
+      "districts": "Пушкинский\t1"
+    },
+    {
+      "districts": "Кировский\t1"
+    }
+  ],
+  "messages": [],
+  "stdout": "districts\n[\"Центральный\"]\ndistrict\tcnt\nNULL\t7\nВыборгский\t6\nЦентральный\t6\nКрасногвардейский\t2\nАдмиралтейский\t1\nПетроградский\t1\nПушкинский\t1\nКировский\t1\n",
+  "stderr": "",
+  "execution_time_ms": 400
+}

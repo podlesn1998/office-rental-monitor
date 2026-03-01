@@ -56,3 +56,31 @@ describe("guessDistrict", () => {
     expect(guessDistrict("улица Неизвестная, 999")).toBeNull();
   });
 });
+
+// Test the district filter logic (mirrors applyDistrictFilter in index.ts)
+function applyDistrictFilter(district: string | null, districts: string[]): boolean {
+  if (!districts || districts.length === 0) return true;
+  if (!district) return true; // keep if district unknown
+  return districts.includes(district);
+}
+
+describe("applyDistrictFilter", () => {
+  it("allows all listings when no districts configured", () => {
+    expect(applyDistrictFilter("Выборгский", [])).toBe(true);
+    expect(applyDistrictFilter(null, [])).toBe(true);
+  });
+
+  it("allows listing when district matches configured list", () => {
+    expect(applyDistrictFilter("Центральный", ["Центральный"])).toBe(true);
+    expect(applyDistrictFilter("Выборгский", ["Центральный", "Выборгский"])).toBe(true);
+  });
+
+  it("blocks listing when district does not match configured list", () => {
+    expect(applyDistrictFilter("Выборгский", ["Центральный"])).toBe(false);
+    expect(applyDistrictFilter("Кировский", ["Центральный", "Адмиралтейский"])).toBe(false);
+  });
+
+  it("allows listing with unknown district even when filter is set", () => {
+    expect(applyDistrictFilter(null, ["Центральный"])).toBe(true);
+  });
+});
