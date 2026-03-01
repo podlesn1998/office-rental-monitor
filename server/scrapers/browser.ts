@@ -1,6 +1,8 @@
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
 
 let _browser: Browser | null = null;
+let _scrapeLock = false;
+let _lockWaiters: Array<() => void> = [];
 
 const CHROMIUM_PATH =
   process.env.CHROMIUM_PATH ||
@@ -34,6 +36,38 @@ export async function getBrowser(): Promise<Browser> {
   return _browser;
 }
 
+/**
+ * Acquire the global scrape lock. Only one scraper runs at a time to prevent
+ * browser context conflicts. Waits up to 3 minutes if another scrape is running.
+ */
+export async function acquireScrapeLock(timeoutMs = 180000): Promise<boolean> {
+  if (!_scrapeLock) {
+    _scrapeLock = true;
+    return true;
+  }
+  // Wait for lock to be released
+  return new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => {
+      const idx = _lockWaiters.indexOf(release);
+      if (idx !== -1) _lockWaiters.splice(idx, 1);
+      resolve(false); // timeout
+    }, timeoutMs);
+
+    const release = () => {
+      clearTimeout(timer);
+      _scrapeLock = true;
+      resolve(true);
+    };
+    _lockWaiters.push(release);
+  });
+}
+
+export function releaseScrapeLock(): void {
+  _scrapeLock = false;
+  const next = _lockWaiters.shift();
+  if (next) next();
+}
+
 export async function createStealthPage(): Promise<{ page: Page; context: BrowserContext }> {
   const browser = await getBrowser();
 
@@ -63,8 +97,8 @@ export async function createStealthPage(): Promise<{ page: Page; context: Browse
 
   const page = await context.newPage();
 
-  // Block heavy resources to speed up loading
-  await page.route("**/*.{png,jpg,jpeg,gif,svg,woff,woff2,ttf,eot}", (route) => route.abort());
+  // Block heavy resources to speed up loading (keep images for CIAN card thumbnails)
+  await page.route("**/*.{woff,woff2,ttf,eot}", (route) => route.abort());
   await page.route("**/analytics/**", (route) => route.abort());
   await page.route("**/metrika/**", (route) => route.abort());
   await page.route("**/mc.yandex.ru/**", (route) => route.abort());

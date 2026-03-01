@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startScheduler, telegramWebhookHandler } from "../scheduler";
+import { closeBrowser } from "../scrapers/browser";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -72,5 +73,14 @@ async function startServer() {
     startScheduler();
   });
 }
+
+// Graceful shutdown: close browser before process exits (important for hot reload)
+const shutdown = async () => {
+  console.log("[Server] Shutting down gracefully...");
+  await closeBrowser();
+  process.exit(0);
+};
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
 startServer().catch(console.error);

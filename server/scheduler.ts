@@ -51,18 +51,18 @@ export function startScheduler(): void {
 
   console.log("[Scheduler] Starting 30-minute monitoring scheduler...");
 
-  // Run immediately on startup (after a short delay to let DB connect)
+  // Run first cycle after 2 minutes (let server fully start and DB connect)
   setTimeout(async () => {
     console.log("[Scheduler] Running initial cycle on startup...");
     await runMonitoringCycle();
-  }, 10000); // 10s delay for startup
+  }, 120000); // 2 min delay
 
   // Then run every 30 minutes
   schedulerInterval = setInterval(async () => {
     await runMonitoringCycle();
   }, INTERVAL_MS);
 
-  console.log(`[Scheduler] Scheduler started. Next run in 30 minutes.`);
+  console.log(`[Scheduler] Scheduler started. First run in 2 minutes, then every 30 minutes.`);
 }
 
 /**

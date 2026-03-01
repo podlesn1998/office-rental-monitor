@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE searchConfig\n  ADD COLUMN officeType VARCHAR(64) NOT NULL DEFAULT 'office',\n  ADD COLUMN transportType VARCHAR(32) NOT NULL DEFAULT 'foot',\n  ADD COLUMN maxPages INT NOT NULL DEFAULT 2,\n  ADD COLUMN enableCian BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN enableAvito BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN enableYandex BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN minFloor INT NULL,\n  ADD COLUMN maxFloor INT NULL,\n  ADD COLUMN keywords JSON NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute ALTER TABLE searchConfig\n  ADD COLUMN officeType VARCHAR(64) NOT NULL DEFAULT 'office',\n  ADD COLUMN transportType VARCHAR(32) NOT NULL DEFAULT 'foot',\n  ADD COLUMN maxPages INT NOT NULL DEFAULT 2,\n  ADD COLUMN enableCian BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN enableAvito BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN enableYandex BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN minFloor INT NULL,\n  ADD COLUMN maxFloor INT NULL,\n  ADD COLUMN keywords JSON NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1870
+}

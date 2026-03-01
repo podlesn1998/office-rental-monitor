@@ -65,6 +65,15 @@ export const appRouter = router({
           footMin: z.number().min(1).max(120).optional(),
           metroStations: z.array(z.string()).optional(),
           active: z.boolean().optional(),
+          officeType: z.string().optional(),
+          transportType: z.enum(["foot", "transport"]).optional(),
+          maxPages: z.number().min(1).max(10).optional(),
+          enableCian: z.boolean().optional(),
+          enableAvito: z.boolean().optional(),
+          enableYandex: z.boolean().optional(),
+          minFloor: z.number().min(1).nullable().optional(),
+          maxFloor: z.number().min(1).nullable().optional(),
+          keywords: z.array(z.string()).optional(),
         })
       )
       .mutation(async ({ input }) => {

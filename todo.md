@@ -67,3 +67,14 @@
 - [x] CIAN: correct DOM selectors found → a[href*="/rent/commercial/"]
 - [x] Yandex: navigation error fixed with try/catch wrapper
 - [x] Avito: graceful skip with informative log message when IP blocked
+
+## Feature: Flexible Search Parameters
+- [x] Extend searchConfig schema: officeType, transportType, maxPages, enableCian/Avito/Yandex, minFloor, maxFloor, keywords
+- [x] Update tRPC searchConfig.update to accept all new fields
+- [x] Fix db.ts updateSearchConfig to persist all new fields
+- [x] Rewrite Settings page: price/area inputs, metro station multi-select with line colors, walking distance + transport type, office type selector, floor filter, keyword filter, platform toggles, pages count
+- [x] Update CIAN scraper to use metroStations, footMin, officeType, maxPages from DB config
+- [x] Update Yandex scraper to use area/price/maxPages from DB config
+- [x] Update Avito scraper to use area/price from DB config
+- [x] Fix Yandex scraper: wait for cards selector before parsing
+- [x] Add graceful browser shutdown on SIGTERM/SIGINT

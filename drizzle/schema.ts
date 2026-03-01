@@ -65,6 +65,16 @@ export const searchConfig = mysqlTable("searchConfig", {
   metroStations: json("metroStations").$type<string[]>(),
   city: varchar("city", { length: 64 }).default("Санкт-Петербург").notNull(),
   active: boolean("active").default(true).notNull(),
+  // New extended fields
+  officeType: varchar("officeType", { length: 64 }).default("office").notNull(), // office, coworking, free_purpose, all
+  transportType: varchar("transportType", { length: 32 }).default("foot").notNull(), // foot, transport
+  maxPages: int("maxPages").default(2).notNull(), // how many pages to scrape per platform
+  enableCian: boolean("enableCian").default(true).notNull(),
+  enableAvito: boolean("enableAvito").default(true).notNull(),
+  enableYandex: boolean("enableYandex").default(true).notNull(),
+  minFloor: int("minFloor"), // optional floor filter
+  maxFloor: int("maxFloor"),
+  keywords: json("keywords").$type<string[]>(), // optional keywords to filter by in title/description
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

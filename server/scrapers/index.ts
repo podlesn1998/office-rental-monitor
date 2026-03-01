@@ -15,6 +15,21 @@ export interface ScrapeResult {
   error?: string;
 }
 
+export interface SearchParams {
+  minArea: number;
+  maxArea: number;
+  minPrice: number;
+  maxPrice: number;
+  footMin: number;
+  metroStations: string[];
+  officeType: string;
+  transportType: "foot" | "transport";
+  maxPages: number;
+  minFloor?: number | null;
+  maxFloor?: number | null;
+  keywords: string[];
+}
+
 /**
  * Deduplicate scraped listings against the database.
  * Returns only truly new listings (not seen before by platform+platformId).
@@ -56,6 +71,31 @@ async function deduplicateListings(
   }
 
   return scraped.filter((l) => !existingIds.has(l.platformId));
+}
+
+/**
+ * Apply keyword filter: keep listing if no keywords defined, or if any keyword
+ * appears in title or description (case-insensitive).
+ */
+function applyKeywordFilter(listing: InsertListing, keywords: string[]): boolean {
+  if (!keywords || keywords.length === 0) return true;
+  const haystack = `${listing.title ?? ""} ${listing.description ?? ""}`.toLowerCase();
+  return keywords.some((kw) => haystack.includes(kw.toLowerCase()));
+}
+
+/**
+ * Apply floor filter.
+ */
+function applyFloorFilter(
+  listing: InsertListing,
+  minFloor?: number | null,
+  maxFloor?: number | null
+): boolean {
+  if (!minFloor && !maxFloor) return true;
+  if (listing.floor == null) return true; // keep if floor unknown
+  if (minFloor && listing.floor < minFloor) return false;
+  if (maxFloor && listing.floor > maxFloor) return false;
+  return true;
 }
 
 /**
@@ -103,52 +143,88 @@ async function saveNewListings(
 }
 
 /**
+ * Load search config from DB with defaults.
+ */
+async function loadSearchConfig(): Promise<SearchParams & { enableCian: boolean; enableAvito: boolean; enableYandex: boolean }> {
+  const db = await getDb();
+  const configs = db
+    ? await db.select().from(searchConfig).where(eq(searchConfig.active, true)).limit(1)
+    : [];
+  const config = configs[0];
+
+  return {
+    minArea: config?.minArea ?? 40,
+    maxArea: config?.maxArea ?? 70,
+    minPrice: Number(config?.minPrice ?? 50000),
+    maxPrice: Number(config?.maxPrice ?? 90000),
+    footMin: config?.footMin ?? 45,
+    metroStations: (config?.metroStations as string[]) ?? [],
+    officeType: config?.officeType ?? "office",
+    transportType: (config?.transportType as "foot" | "transport") ?? "foot",
+    maxPages: config?.maxPages ?? 2,
+    minFloor: config?.minFloor ?? null,
+    maxFloor: config?.maxFloor ?? null,
+    keywords: (config?.keywords as string[]) ?? [],
+    enableCian: config?.enableCian ?? true,
+    enableAvito: config?.enableAvito ?? true,
+    enableYandex: config?.enableYandex ?? true,
+  };
+}
+
+/**
  * Run scraper for a single platform.
  */
 export async function runPlatformScrape(platform: Platform): Promise<ScrapeResult> {
-  const db = await getDb();
   const logId = await startScrapeLog(platform);
 
   try {
-    // Get search config
-    const configs = db
-      ? await db.select().from(searchConfig).where(eq(searchConfig.active, true)).limit(1)
-      : [];
-    const config = configs[0] ?? {
-      minArea: 40,
-      maxArea: 70,
-      minPrice: 50000,
-      maxPrice: 90000,
-      footMin: 45,
-      metroStations: [],
-    };
+    const config = await loadSearchConfig();
 
-    const params = {
-      minArea: config.minArea,
-      maxArea: config.maxArea,
-      minPrice: Number(config.minPrice),
-      maxPrice: Number(config.maxPrice),
-      footMin: config.footMin,
-      metroStations: (config.metroStations as string[]) ?? [],
-    };
+    // Check if platform is enabled
+    if (platform === "cian" && !config.enableCian) {
+      console.log("[Scraper] CIAN is disabled, skipping");
+      await finishScrapeLog(logId, 0, 0, 0, "success");
+      return { platform, found: 0, newCount: 0, newListings: [] };
+    }
+    if (platform === "avito" && !config.enableAvito) {
+      console.log("[Scraper] Avito is disabled, skipping");
+      await finishScrapeLog(logId, 0, 0, 0, "success");
+      return { platform, found: 0, newCount: 0, newListings: [] };
+    }
+    if (platform === "yandex" && !config.enableYandex) {
+      console.log("[Scraper] Yandex is disabled, skipping");
+      await finishScrapeLog(logId, 0, 0, 0, "success");
+      return { platform, found: 0, newCount: 0, newListings: [] };
+    }
 
     // Run platform scraper
     let scraped: InsertListing[] = [];
-    if (platform === "cian") scraped = await scrapeCian(params);
-    else if (platform === "avito") scraped = await scrapeAvito(params);
-    else if (platform === "yandex") scraped = await scrapeYandex(params);
+    if (platform === "cian") scraped = await scrapeCian(config);
+    else if (platform === "avito") scraped = await scrapeAvito(config);
+    else if (platform === "yandex") scraped = await scrapeYandex(config);
+
+    // Apply keyword and floor filters
+    const filtered = scraped.filter(
+      (l) =>
+        applyKeywordFilter(l, config.keywords) &&
+        applyFloorFilter(l, config.minFloor, config.maxFloor)
+    );
+
+    if (filtered.length < scraped.length) {
+      console.log(`[Scraper] Filtered ${scraped.length - filtered.length} listings by keywords/floor`);
+    }
 
     // Deduplicate
-    const newOnes = await deduplicateListings(scraped, platform);
+    const newOnes = await deduplicateListings(filtered, platform);
 
     // Save new listings
     const savedListings = await saveNewListings(newOnes);
 
-    await finishScrapeLog(logId, scraped.length, newOnes.length, 0, "success");
+    await finishScrapeLog(logId, filtered.length, newOnes.length, 0, "success");
 
     return {
       platform,
-      found: scraped.length,
+      found: filtered.length,
       newCount: newOnes.length,
       newListings: savedListings,
     };
@@ -165,7 +241,17 @@ export async function runPlatformScrape(platform: Platform): Promise<ScrapeResul
  */
 export async function runAllScrapers(): Promise<ScrapeResult> {
   console.log("[Scraper] Starting full scrape run...");
-  const platforms: Platform[] = ["cian", "avito", "yandex"];
+  const config = await loadSearchConfig();
+  const platforms: Platform[] = [];
+  if (config.enableCian) platforms.push("cian");
+  if (config.enableAvito) platforms.push("avito");
+  if (config.enableYandex) platforms.push("yandex");
+
+  if (platforms.length === 0) {
+    console.log("[Scraper] All platforms disabled, skipping run");
+    return { platform: "all", found: 0, newCount: 0, newListings: [] };
+  }
+
   const allNew: (typeof listings.$inferSelect)[] = [];
   let totalFound = 0;
   let totalNew = 0;

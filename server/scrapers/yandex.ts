@@ -1,17 +1,19 @@
 import type { InsertListing } from "../../drizzle/schema";
 import { createStealthPage } from "./browser";
+import type { SearchParams } from "./index";
 
-interface SearchParams {
-  minArea: number;
-  maxArea: number;
-  minPrice: number;
-  maxPrice: number;
-}
+// Yandex office type URL segments
+const YANDEX_OFFICE_TYPE_PATH: Record<string, string> = {
+  office: "ofis",
+  coworking: "ofis",       // Yandex doesn't separate coworking, use office
+  free_purpose: "svobodnoe-naznachenie",
+  all: "ofis",
+};
 
 function buildYandexUrl(params: SearchParams, page = 1): string {
-  // Correct URL for Yandex Real Estate office rentals in SPb
+  const typePath = YANDEX_OFFICE_TYPE_PATH[params.officeType] ?? "ofis";
   const url = new URL(
-    "https://realty.yandex.ru/sankt-peterburg/snyat/kommercheskaya-nedvizhimost/ofis/"
+    `https://realty.yandex.ru/sankt-peterburg/snyat/kommercheskaya-nedvizhimost/${typePath}/`
   );
   if (params.minArea) url.searchParams.set("areaMin", String(params.minArea));
   if (params.maxArea) url.searchParams.set("areaMax", String(params.maxArea));
@@ -21,138 +23,152 @@ function buildYandexUrl(params: SearchParams, page = 1): string {
   return url.toString();
 }
 
+async function parseYandexPage(page: import("playwright-core").Page): Promise<Array<{
+  id: string; href: string; price: number | null; area: number | null;
+  metro: string; metroMin: number | null; address: string; title: string;
+}>> {
+  return page.evaluate(() => {
+    const cardResults: Array<{
+      id: string; href: string; price: number | null; area: number | null;
+      metro: string; metroMin: number | null; address: string; title: string;
+    }> = [];
+
+    const links = Array.from(document.querySelectorAll('a[href*="/offer/"]'));
+    const seenIds: string[] = [];
+
+    for (const link of links) {
+      const href = (link as HTMLAnchorElement).href;
+      const idMatch = href.match(/\/offer\/(\d+)/);
+      if (!idMatch) continue;
+      const id = idMatch[1];
+      if (seenIds.includes(id)) continue;
+      seenIds.push(id);
+
+      let container: Element | null = link.parentElement;
+      let depth = 0;
+      while (container && depth < 12) {
+        const text = container.textContent ?? "";
+        if ((text.includes("₽") || text.includes("руб")) && text.includes("м²")) break;
+        container = container.parentElement;
+        depth++;
+      }
+      if (!container) continue;
+
+      const fullText = container.textContent ?? "";
+
+      const priceMatch = fullText.replace(/\s/g, "").match(/(\d{4,})\s*₽/);
+      const price = priceMatch ? parseInt(priceMatch[1]) : null;
+
+      const areaMatch = fullText.match(/(\d+[,.]?\d*)\s*м²/);
+      const area = areaMatch ? parseFloat(areaMatch[1].replace(",", ".")) : null;
+
+      const metroEl = container.querySelector('[class*="metro"], [class*="Metro"], [class*="underground"], [class*="Underground"]');
+      let metro = "";
+      let metroMin: number | null = null;
+      if (metroEl) {
+        const metroText = metroEl.textContent ?? "";
+        const metroMatch = metroText.match(/^([^⋅•·\d]+)[⋅•·\s]+(\d+)\s*мин/);
+        if (metroMatch) {
+          metro = metroMatch[1].trim();
+          metroMin = parseInt(metroMatch[2]);
+        } else {
+          metro = metroText.trim().slice(0, 50);
+        }
+      }
+
+      const addressEl = container.querySelector('[class*="address"], [class*="Address"], [class*="location"], [class*="Location"]');
+      const address = addressEl?.textContent?.trim() ?? "";
+
+      const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
+      const titleText = titleEl?.textContent?.trim() ?? "";
+
+      cardResults.push({ id, href, price, area, metro, metroMin, address, title: titleText });
+    }
+
+    return cardResults;
+  });
+}
+
 export async function scrapeYandex(params: SearchParams): Promise<InsertListing[]> {
   const results: InsertListing[] = [];
   const { page, context } = await createStealthPage();
+  const maxPages = params.maxPages ?? 2;
 
   try {
-    const url = buildYandexUrl(params, 1);
-    console.log(`[Yandex] Navigating to: ${url}`);
+    for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+      const url = buildYandexUrl(params, pageNum);
+      console.log(`[Yandex] Navigating to page ${pageNum}: ${url}`);
 
-    try {
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
-    } catch (navErr) {
-      // Yandex may redirect; ignore navigation errors and check what we have
-      console.warn("[Yandex] Navigation warning:", navErr instanceof Error ? navErr.message : navErr);
-    }
-    await page.waitForTimeout(5000);
+      try {
+        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 35000 });
+      } catch (navErr) {
+        console.warn("[Yandex] Navigation warning:", navErr instanceof Error ? navErr.message : navErr);
+      }
+      // Wait for React to render listing cards
+      try {
+        await page.waitForSelector('a[href*="/offer/"]', { timeout: 12000 });
+      } catch {
+        // Cards might not appear (captcha or empty page)
+      }
+      await page.waitForTimeout(pageNum === 1 ? 3000 : 2000);
 
-    let title = "";
-    try {
-      title = await page.title();
-    } catch {
-      title = "";
-    }
-    console.log(`[Yandex] Page title: ${title}`);
+      let title = "";
+      try {
+        title = await page.title();
+      } catch {
+        title = "";
+      }
+      console.log(`[Yandex] Page ${pageNum} title: ${title}`);
 
-    if (
-      title.toLowerCase().includes("captcha") ||
-      title.toLowerCase().includes("robot") ||
-      title.includes("404")
-    ) {
-      console.warn("[Yandex] Blocked or 404");
-      return results;
-    }
-
-    // Parse offer links and their container cards
-    const cards = await page.evaluate(() => {
-      const cardResults: Array<{
-        id: string;
-        href: string;
-        price: number | null;
-        area: number | null;
-        metro: string;
-        metroMin: number | null;
-        address: string;
-        title: string;
-      }> = [];
-
-      const links = Array.from(document.querySelectorAll('a[href*="/offer/"]'));
-      const seenIds = new Set<string>();
-
-      for (const link of links) {
-        const href = (link as HTMLAnchorElement).href;
-        const idMatch = href.match(/\/offer\/(\d+)/);
-        if (!idMatch) continue;
-        const id = idMatch[1];
-        if (seenIds.has(id)) continue;
-        seenIds.add(id);
-
-        // Walk up to find the card container
-        let container: Element | null = link.parentElement;
-        let depth = 0;
-        while (container && depth < 12) {
-          const text = container.textContent ?? "";
-          if ((text.includes("₽") || text.includes("руб")) && text.includes("м²")) break;
-          container = container.parentElement;
-          depth++;
-        }
-        if (!container) continue;
-
-        const fullText = container.textContent ?? "";
-
-        // Extract price
-        const priceMatch = fullText.replace(/\s/g, "").match(/(\d{4,})\s*₽/);
-        const price = priceMatch ? parseInt(priceMatch[1]) : null;
-
-        // Extract area
-        const areaMatch = fullText.match(/(\d+[,.]?\d*)\s*м²/);
-        const area = areaMatch ? parseFloat(areaMatch[1].replace(",", ".")) : null;
-
-        // Extract metro
-        const metroEl = container.querySelector('[class*="metro"], [class*="Metro"], [class*="underground"], [class*="Underground"]');
-        let metro = "";
-        let metroMin: number | null = null;
-        if (metroEl) {
-          const metroText = metroEl.textContent ?? "";
-          const metroMatch = metroText.match(/^([^⋅•·\d]+)[⋅•·\s]+(\d+)\s*мин/);
-          if (metroMatch) {
-            metro = metroMatch[1].trim();
-            metroMin = parseInt(metroMatch[2]);
-          } else {
-            metro = metroText.trim().slice(0, 50);
-          }
-        }
-
-        // Extract address
-        const addressEl = container.querySelector('[class*="address"], [class*="Address"], [class*="location"], [class*="Location"]');
-        const address = addressEl?.textContent?.trim() ?? "";
-
-        // Title
-        const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
-        const titleText = titleEl?.textContent?.trim() ?? "";
-
-        cardResults.push({ id, href, price, area, metro, metroMin, address, title: titleText });
+      if (
+        title.toLowerCase().includes("captcha") ||
+        title.toLowerCase().includes("robot") ||
+        title.includes("404") ||
+        title.toLowerCase().includes("не робот") ||
+        title.toLowerCase().includes("робот")
+      ) {
+        console.warn("[Yandex] Captcha/robot check detected, stopping");
+        break;
       }
 
-      return cardResults;
-    });
+      const cards = await parseYandexPage(page);
+      console.log(`[Yandex] Parsed ${cards.length} cards from page ${pageNum}`);
 
-    console.log(`[Yandex] Parsed ${cards.length} cards`);
+      if (cards.length === 0) {
+        console.log(`[Yandex] No cards on page ${pageNum}, stopping`);
+        break;
+      }
 
-    for (const card of cards) {
-      results.push({
-        platform: "yandex",
-        platformId: card.id,
-        title: card.title || null,
-        address: card.address || null,
-        district: null,
-        metroStation: card.metro || null,
-        metroDistanceMin: card.metroMin,
-        metroDistanceType: "foot",
-        price: card.price,
-        area: card.area,
-        floor: null,
-        totalFloors: null,
-        description: null,
-        photos: [],
-        url: card.href,
-        phone: null,
-        isNew: true,
-        isSent: false,
-        firstSeen: new Date(),
-        lastSeen: new Date(),
-      });
+      const existingIds = new Set(results.map((r) => r.platformId));
+      for (const card of cards) {
+        if (existingIds.has(card.id)) continue;
+        results.push({
+          platform: "yandex",
+          platformId: card.id,
+          title: card.title || null,
+          address: card.address || null,
+          district: null,
+          metroStation: card.metro || null,
+          metroDistanceMin: card.metroMin,
+          metroDistanceType: params.transportType,
+          price: card.price,
+          area: card.area ? Math.round(card.area) : null,
+          floor: null,
+          totalFloors: null,
+          description: null,
+          photos: [],
+          url: card.href,
+          phone: null,
+          isNew: true,
+          isSent: false,
+          firstSeen: new Date(),
+          lastSeen: new Date(),
+        });
+      }
+
+      if (pageNum < maxPages) {
+        await page.waitForTimeout(2000);
+      }
     }
   } catch (err) {
     console.error("[Yandex] Scraper error:", err instanceof Error ? err.message : err);

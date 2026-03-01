@@ -146,6 +146,15 @@ export async function updateSearchConfig(
     footMin: number;
     metroStations: string[];
     active: boolean;
+    officeType: string;
+    transportType: string;
+    maxPages: number;
+    enableCian: boolean;
+    enableAvito: boolean;
+    enableYandex: boolean;
+    minFloor: number | null;
+    maxFloor: number | null;
+    keywords: string[];
   }>
 ) {
   const db = await getDb();
@@ -160,9 +169,36 @@ export async function updateSearchConfig(
       footMin: data.footMin ?? 45,
       metroStations: data.metroStations ?? [],
       active: data.active ?? true,
+      officeType: data.officeType ?? "office",
+      transportType: data.transportType ?? "foot",
+      maxPages: data.maxPages ?? 2,
+      enableCian: data.enableCian ?? true,
+      enableAvito: data.enableAvito ?? true,
+      enableYandex: data.enableYandex ?? true,
+      minFloor: data.minFloor ?? null,
+      maxFloor: data.maxFloor ?? null,
+      keywords: data.keywords ?? [],
     });
   } else {
-    await db.update(searchConfig).set(data).where(eq(searchConfig.id, existing[0].id));
+    // Build update object, handling null values explicitly
+    const updateData: Record<string, unknown> = {};
+    if (data.minArea !== undefined) updateData.minArea = data.minArea;
+    if (data.maxArea !== undefined) updateData.maxArea = data.maxArea;
+    if (data.minPrice !== undefined) updateData.minPrice = data.minPrice;
+    if (data.maxPrice !== undefined) updateData.maxPrice = data.maxPrice;
+    if (data.footMin !== undefined) updateData.footMin = data.footMin;
+    if (data.metroStations !== undefined) updateData.metroStations = data.metroStations;
+    if (data.active !== undefined) updateData.active = data.active;
+    if (data.officeType !== undefined) updateData.officeType = data.officeType;
+    if (data.transportType !== undefined) updateData.transportType = data.transportType;
+    if (data.maxPages !== undefined) updateData.maxPages = data.maxPages;
+    if (data.enableCian !== undefined) updateData.enableCian = data.enableCian;
+    if (data.enableAvito !== undefined) updateData.enableAvito = data.enableAvito;
+    if (data.enableYandex !== undefined) updateData.enableYandex = data.enableYandex;
+    if (data.minFloor !== undefined) updateData.minFloor = data.minFloor;
+    if (data.maxFloor !== undefined) updateData.maxFloor = data.maxFloor;
+    if (data.keywords !== undefined) updateData.keywords = data.keywords;
+    await db.update(searchConfig).set(updateData).where(eq(searchConfig.id, existing[0].id));
   }
 }
 
