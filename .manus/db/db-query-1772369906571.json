@@ -1,0 +1,23 @@
+{
+  "query": "SELECT id, minArea, maxArea, minPrice, maxPrice, footMin, city, active FROM searchConfig;\nSELECT id, active, initialBulkSent FROM telegramConfig;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, minArea, maxArea, minPrice, maxPrice, footMin, city, active FROM searchConfig;\nSELECT id, active, initialBulkSent FROM telegramConfig;",
+  "rows": [
+    {
+      "id": "1",
+      "minArea": "40",
+      "maxArea": "70",
+      "minPrice": "50000",
+      "maxPrice": "90000",
+      "footMin": "45",
+      "city": "Санкт-Петербург",
+      "active": "1"
+    }
+  ],
+  "messages": [
+    "id\tactive\tinitialBulkSent",
+    "1\t0\t0"
+  ],
+  "stdout": "id\tminArea\tmaxArea\tminPrice\tmaxPrice\tfootMin\tcity\tactive\n1\t40\t70\t50000\t90000\t45\tСанкт-Петербург\t1\nid\tactive\tinitialBulkSent\n1\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 413
+}

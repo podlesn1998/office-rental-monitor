@@ -1,0 +1,9 @@
+{
+  "query": "INSERT IGNORE INTO `searchConfig` (`id`, `minArea`, `maxArea`, `minPrice`, `maxPrice`, `footMin`, `metroStations`, `city`, `active`)\nVALUES (1, 40, 70, 50000, 90000, 45, '[\"Приморская\",\"Василеостровская\",\"Гостиный двор\",\"Невский проспект\",\"Площадь Восстания\",\"Чернышевская\",\"Площадь Ленина\",\"Выборгская\"]', 'Санкт-Петербург', true);\n\nINSERT IGNORE INTO `telegramConfig` (`id`, `active`, `initialBulkSent`)\nVALUES (1, false, false);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute INSERT IGNORE INTO `searchConfig` (`id`, `minArea`, `maxArea`, `minPrice`, `maxPrice`, `footMin`, `metroStations`, `city`, `active`)\nVALUES (1, 40, 70, 50000, 90000, 45, '[\"Приморская\",\"Василеостровская\",\"Гостиный двор\",\"Невский проспект\",\"Площадь Восстания\",\"Чернышевская\",\"Площадь Ленина\",\"Выборгская\"]', 'Санкт-Петербург', true);\n\nINSERT IGNORE INTO `telegramConfig` (`id`, `active`, `initialBulkSent`)\nVALUES (1, false, false);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 453
+}

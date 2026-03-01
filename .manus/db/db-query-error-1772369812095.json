@@ -1,0 +1,17 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `listings` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`platform` enum('cian','avito','yandex') NOT NULL,\n\t`platformId` varchar(128) NOT NULL,\n\t`title` text,\n\t`address` text,\n\t`district` varchar(256),\n\t`metroStation` varchar(256),\n\t`metroDistanceMin` int,\n\t`metroDistanceType` varchar(32),\n\t`price` bigint,\n\t`area` int,\n\t`floor` int,\n\t`totalFloors` int,\n\t`description` text,\n\t`photos` json DEFAULT ('[]'),\n\t`url` text NOT NULL,\n\t`phone` varchar(64),\n\t`isNew` boolean NOT NULL DEFAULT true,\n\t`isSent` boolean NOT NULL DEFAULT false,\n\t`firstSeen` timestamp NOT NULL DEFAULT (now()),\n\t`lastSeen` timestamp NOT NULL DEFAULT (now()),\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `listings_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute CREATE TABLE IF NOT EXISTS `listings` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`platform` enum('cian','avito','yandex') NOT NULL,\n\t`platformId` varchar(128) NOT NULL,\n\t`title` text,\n\t`address` text,\n\t`district` varchar(256),\n\t`metroStation` varchar(256),\n\t`metroDistanceMin` int,\n\t`metroDistanceType` varchar(32),\n\t`price` bigint,\n\t`area` int,\n\t`floor` int,\n\t`totalFloors` int,\n\t`description` text,\n\t`photos` json DEFAULT ('[]'),\n\t`url` text NOT NULL,\n\t`phone` varchar(64),\n\t`isNew` boolean NOT NULL DEFAULT true,\n\t`isSent` boolean NOT NULL DEFAULT false,\n\t`firstSeen` timestamp NOT NULL DEFAULT (now()),\n\t`lastSeen` timestamp NOT NULL DEFAULT (now()),\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `listings_id` PRIMARY KEY(`id`)\n);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 16 column 29 near \"'[]'),",
+    "\t`url` text NOT NULL,",
+    "\t`phone` varchar(64),",
+    "\t`isNew` boolean NOT NULL DEFAULT true,",
+    "\t`isSent` boolean NOT NULL DEFAULT false,",
+    "\t`firstSeen` timestamp NOT NULL DEFAULT (now()),",
+    "\t`lastSeen` timestamp NOT NULL DEFAULT (now()),",
+    "\t`createdAt` timestamp NOT NULL DEFAULT (now()),",
+    "\tCONSTRAINT `listings_id` PRIMARY KEY(`id`)",
+    ")\""
+  ]
+}

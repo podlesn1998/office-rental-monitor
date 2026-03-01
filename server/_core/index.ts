@@ -8,6 +8,7 @@ import { registerChatRoutes } from "./chat";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { startScheduler, telegramWebhookHandler } from "../scheduler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +39,11 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Chat API with streaming and tool calling
   registerChatRoutes(app);
+  // Telegram webhook
+  app.post("/api/telegram/webhook", (req, res) => {
+    telegramWebhookHandler(req as Parameters<typeof telegramWebhookHandler>[0], res as Parameters<typeof telegramWebhookHandler>[1]);
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
@@ -62,6 +68,8 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    // Start the 30-minute monitoring scheduler
+    startScheduler();
   });
 }
 
