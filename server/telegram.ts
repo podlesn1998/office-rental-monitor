@@ -86,6 +86,25 @@ async function sendTelegramMessage(
       signal: AbortSignal.timeout(10000),
     });
 
+    if (response.status === 429) {
+      // Rate limited — read retry_after and wait
+      try {
+        const body = await response.json() as { parameters?: { retry_after?: number } };
+        const retryAfter = (body.parameters?.retry_after ?? 30) + 2;
+        console.warn(`[Telegram] Rate limited, waiting ${retryAfter}s...`);
+        await new Promise((r) => setTimeout(r, retryAfter * 1000));
+        // Retry once after waiting
+        const retry = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: false, ...options }),
+          signal: AbortSignal.timeout(10000),
+        });
+        return retry.ok;
+      } catch {
+        return false;
+      }
+    }
     if (!response.ok) {
       const err = await response.text();
       console.error(`[Telegram] sendMessage failed: ${response.status} ${err}`);
@@ -127,6 +146,23 @@ async function sendListingNotification(
       });
 
       if (response.ok) return true;
+      if (response.status === 429) {
+        try {
+          const body = await response.json() as { parameters?: { retry_after?: number } };
+          const retryAfter = (body.parameters?.retry_after ?? 30) + 2;
+          console.warn(`[Telegram] Photo rate limited, waiting ${retryAfter}s...`);
+          await new Promise((r) => setTimeout(r, retryAfter * 1000));
+          const retry = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chatId, photo: photos[0], caption: text.slice(0, 1024), parse_mode: "HTML" }),
+            signal: AbortSignal.timeout(10000),
+          });
+          if (retry.ok) return true;
+        } catch {
+          // Fall through
+        }
+      }
       // Fall through to text message if photo fails
     } catch {
       // Fall through
@@ -143,7 +179,7 @@ export async function sendListingsBatch(
   botToken: string,
   chatId: string,
   listingsList: Listing[],
-  delayMs = 1000
+  delayMs = 2000
 ): Promise<number> {
   let sentCount = 0;
 

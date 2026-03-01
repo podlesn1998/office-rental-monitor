@@ -74,8 +74,14 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
       }
 
       const fullText = container.textContent ?? "";
-      const areaMatch = fullText.match(/(\d+[,.]?\d*)\s*м²/);
-      const area = areaMatch ? parseFloat(areaMatch[1].replace(",", ".")) : null;
+      // Find ALL м² occurrences and pick the one in realistic office area range (10–999 m²)
+      let area: number | null = null;
+      const areaRe = /(\d+[,.]?\d*)\s*м²/g;
+      let areaM: RegExpExecArray | null;
+      while ((areaM = areaRe.exec(fullText)) !== null) {
+        const val = parseFloat(areaM[1].replace(",", "."));
+        if (val >= 10 && val <= 999) { area = val; break; }
+      }
 
       const metroEl = container.querySelector('[class*="underground"], [class*="metro"]');
       let metro = "";
@@ -106,6 +112,14 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
 
       const titleEl = container.querySelector('[class*="title"], [class*="Title"], [class*="name"]');
       const titleText = titleEl?.textContent?.trim() ?? "";
+
+      // Skip CIAN service banners (average price, additional offers, etc.)
+      if (
+        fullText.includes("Средняя цена") ||
+        fullText.includes("Дополнительные предложения") ||
+        fullText.includes("Похожие объявления") ||
+        fullText.includes("Объявления рядом")
+      ) continue;
 
       // Extract ceiling height: look for patterns like "3 м", "2.7 м", "потолки 3м", "высота потолков"
       let ceilingHeight: number | null = null;

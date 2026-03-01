@@ -1,0 +1,114 @@
+{
+  "query": "SELECT area, COUNT(*) as count FROM listings WHERE area IS NOT NULL GROUP BY area ORDER BY count DESC LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT area, COUNT(*) as count FROM listings WHERE area IS NOT NULL GROUP BY area ORDER BY count DESC LIMIT 30;",
+  "rows": [
+    {
+      "area": "70",
+      "count": "15"
+    },
+    {
+      "area": "116",
+      "count": "9"
+    },
+    {
+      "area": "360",
+      "count": "2"
+    },
+    {
+      "area": "48",
+      "count": "1"
+    },
+    {
+      "area": "167",
+      "count": "1"
+    },
+    {
+      "area": "643",
+      "count": "1"
+    },
+    {
+      "area": "157",
+      "count": "1"
+    },
+    {
+      "area": "642",
+      "count": "1"
+    },
+    {
+      "area": "747",
+      "count": "1"
+    },
+    {
+      "area": "667",
+      "count": "1"
+    },
+    {
+      "area": "750",
+      "count": "1"
+    },
+    {
+      "area": "843",
+      "count": "1"
+    },
+    {
+      "area": "361",
+      "count": "1"
+    },
+    {
+      "area": "60",
+      "count": "1"
+    },
+    {
+      "area": "148",
+      "count": "1"
+    },
+    {
+      "area": "51",
+      "count": "1"
+    },
+    {
+      "area": "32",
+      "count": "1"
+    },
+    {
+      "area": "547",
+      "count": "1"
+    },
+    {
+      "area": "251",
+      "count": "1"
+    },
+    {
+      "area": "54",
+      "count": "1"
+    },
+    {
+      "area": "560",
+      "count": "1"
+    },
+    {
+      "area": "648",
+      "count": "1"
+    },
+    {
+      "area": "150",
+      "count": "1"
+    },
+    {
+      "area": "346",
+      "count": "1"
+    },
+    {
+      "area": "255",
+      "count": "1"
+    },
+    {
+      "area": "1246",
+      "count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "area\tcount\n70\t15\n116\t9\n360\t2\n48\t1\n167\t1\n643\t1\n157\t1\n642\t1\n747\t1\n667\t1\n750\t1\n843\t1\n361\t1\n60\t1\n148\t1\n51\t1\n32\t1\n547\t1\n251\t1\n54\t1\n560\t1\n648\t1\n150\t1\n346\t1\n255\t1\n1246\t1\n",
+  "stderr": "",
+  "execution_time_ms": 366
+}

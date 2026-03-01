@@ -102,3 +102,14 @@
 - [x] Add sendAllListingsForced() that bypasses active check — used by manual send button
 - [x] Auto-enable active=true and auto-save settings on successful connection test
 - [x] Suppress duplicate toast on auto-save after test
+
+## Bug: Incorrect Area Display (FIXED)
+- [x] Check what area values are stored in DB — found fake CIAN banners and wrong Yandex area values
+- [x] Fix area extraction in CIAN scraper — filter out "Средняя цена" and "Дополнительные предложения" banners
+- [x] Fix area extraction in Yandex scraper — extract area from title first (reliable format "XX м² · офис")
+- [x] Clean DB: deleted fake CIAN entries, corrected 21 Yandex area values
+
+## Bug: Telegram 429 Rate Limiting (FIXED)
+- [x] Add retry-after handling in sendTelegramMessage (reads retry_after from Telegram response)
+- [x] Add retry-after handling in sendPhoto path
+- [x] Increase default delay between messages from 1000ms to 2000ms

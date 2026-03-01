@@ -1,0 +1,26 @@
+{
+  "query": "SELECT platform, COUNT(*) as total, MIN(area) as min_area, MAX(area) as max_area, AVG(area) as avg_area, SUM(CASE WHEN area IS NULL THEN 1 ELSE 0 END) as null_area FROM listings GROUP BY platform;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT platform, COUNT(*) as total, MIN(area) as min_area, MAX(area) as max_area, AVG(area) as avg_area, SUM(CASE WHEN area IS NULL THEN 1 ELSE 0 END) as null_area FROM listings GROUP BY platform;",
+  "rows": [
+    {
+      "platform": "yandex",
+      "total": "23",
+      "min_area": "48",
+      "max_area": "1246",
+      "avg_area": "435.2174",
+      "null_area": "0"
+    },
+    {
+      "platform": "cian",
+      "total": "26",
+      "min_area": "32",
+      "max_area": "116",
+      "avg_area": "83.7308",
+      "null_area": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "platform\ttotal\tmin_area\tmax_area\tavg_area\tnull_area\nyandex\t23\t48\t1246\t435.2174\t0\ncian\t26\t32\t116\t83.7308\t0\n",
+  "stderr": "",
+  "execution_time_ms": 361
+}

@@ -1,0 +1,145 @@
+{
+  "query": "SELECT id, platform, title, area, ceilingHeight, price, address FROM listings ORDER BY firstSeen DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platform, title, area, ceilingHeight, price, address FROM listings ORDER BY firstSeen DESC LIMIT 15;",
+  "rows": [
+    {
+      "id": "49",
+      "platform": "yandex",
+      "title": "48 м² · офис · 1 этаж из 6B",
+      "area": "648",
+      "ceilingHeight": "NULL",
+      "price": "67200",
+      "address": "проспект Пархоменко, 10к2"
+    },
+    {
+      "id": "46",
+      "platform": "yandex",
+      "title": "46,7 м² · офис · 3 этаж из 6",
+      "area": "547",
+      "ceilingHeight": "NULL",
+      "price": "51790",
+      "address": "улица Комсомола, 1-3М"
+    },
+    {
+      "id": "43",
+      "platform": "yandex",
+      "title": "54,3 м² · офис · 1 этаж из 3",
+      "area": "54",
+      "ceilingHeight": "NULL",
+      "price": "54300",
+      "address": "улица Комсомола, 1-3М"
+    },
+    {
+      "id": "42",
+      "platform": "yandex",
+      "title": "50 м² · офис · 10 этаж из 10",
+      "area": "750",
+      "ceilingHeight": "NULL",
+      "price": "50000",
+      "address": "Пушкин, улица Архитектора Данини, 5ЖК «Самое сердце»"
+    },
+    {
+      "id": "47",
+      "platform": "yandex",
+      "title": "49,9 м² · офис · 3 этаж из 6",
+      "area": "150",
+      "ceilingHeight": "NULL",
+      "price": "54840",
+      "address": "Красногвардейский переулок, 23ЖК «ЦДС «Чёрная речка»»"
+    },
+    {
+      "id": "48",
+      "platform": "yandex",
+      "title": "60 м² · офис · 3 этаж из 4C",
+      "area": "560",
+      "ceilingHeight": "NULL",
+      "price": "90000",
+      "address": "проспект Тореза, 98к1"
+    },
+    {
+      "id": "44",
+      "platform": "yandex",
+      "title": "46 м² · офис · 4 этаж из 6B",
+      "area": "1246",
+      "ceilingHeight": "NULL",
+      "price": "64998",
+      "address": "Лиговский проспект, 10/118"
+    },
+    {
+      "id": "45",
+      "platform": "yandex",
+      "title": "48 м² · офис · 2 этаж из 12",
+      "area": "148",
+      "ceilingHeight": "NULL",
+      "price": "50000",
+      "address": "проспект Энгельса, 111к1"
+    },
+    {
+      "id": "34",
+      "platform": "yandex",
+      "title": "54,8 м² · офис · 2 этаж из 5B",
+      "area": "255",
+      "ceilingHeight": "NULL",
+      "price": "67760",
+      "address": "Апраксин переулок, 8"
+    },
+    {
+      "id": "36",
+      "platform": "yandex",
+      "title": "48 м² · офис · 1 этаж из 5B",
+      "area": "48",
+      "ceilingHeight": "NULL",
+      "price": "72000",
+      "address": "Большой проспект Петроградской стороны, 18"
+    },
+    {
+      "id": "39",
+      "platform": "yandex",
+      "title": "60 м² · офис · 3 этаж из 5C",
+      "area": "60",
+      "ceilingHeight": "NULL",
+      "price": "78000",
+      "address": "9-я Советская улица, 4-6"
+    },
+    {
+      "id": "40",
+      "platform": "yandex",
+      "title": "46 м² · офис · 1 этаж из 5",
+      "area": "346",
+      "ceilingHeight": "NULL",
+      "price": "55000",
+      "address": "Захарьевская улица, 27"
+    },
+    {
+      "id": "37",
+      "platform": "yandex",
+      "title": "41,7 м² · офис · 4 этаж из 5B",
+      "area": "642",
+      "ceilingHeight": "NULL",
+      "price": "762550",
+      "address": "Казанская улица, 7"
+    },
+    {
+      "id": "38",
+      "platform": "yandex",
+      "title": "67 м² · офис · 3 этаж из 3B",
+      "area": "667",
+      "ceilingHeight": "NULL",
+      "price": "56950",
+      "address": "Октябрьская набережная, 104к43"
+    },
+    {
+      "id": "41",
+      "platform": "yandex",
+      "title": "43 м² · офис · 5 этаж из 6B",
+      "area": "643",
+      "ceilingHeight": "NULL",
+      "price": "60458",
+      "address": "Лиговский проспект, 10/118"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatform\ttitle\tarea\tceilingHeight\tprice\taddress\n49\tyandex\t48 м² · офис · 1 этаж из 6B\t648\tNULL\t67200\tпроспект Пархоменко, 10к2\n46\tyandex\t46,7 м² · офис · 3 этаж из 6\t547\tNULL\t51790\tулица Комсомола, 1-3М\n43\tyandex\t54,3 м² · офис · 1 этаж из 3\t54\tNULL\t54300\tулица Комсомола, 1-3М\n42\tyandex\t50 м² · офис · 10 этаж из 10\t750\tNULL\t50000\tПушкин, улица Архитектора Данини, 5ЖК «Самое сердце»\n47\tyandex\t49,9 м² · офис · 3 этаж из 6\t150\tNULL\t54840\tКрасногвардейский переулок, 23ЖК «ЦДС «Чёрная речка»»\n48\tyandex\t60 м² · офис · 3 этаж из 4C\t560\tNULL\t90000\tпроспект Тореза, 98к1\n44\tyandex\t46 м² · офис · 4 этаж из 6B\t1246\tNULL\t64998\tЛиговский проспект, 10/118\n45\tyandex\t48 м² · офис · 2 этаж из 12\t148\tNULL\t50000\tпроспект Энгельса, 111к1\n34\tyandex\t54,8 м² · офис · 2 этаж из 5B\t255\tNULL\t67760\tАпраксин переулок, 8\n36\tyandex\t48 м² · офис · 1 этаж из 5B\t48\tNULL\t72000\tБольшой проспект Петроградской стороны, 18\n39\tyandex\t60 м² · офис · 3 этаж из 5C\t60\tNULL\t78000\t9-я Советская улица, 4-6\n40\tyandex\t46 м² · офис · 1 этаж из 5\t346\tNULL\t55000\tЗахарьевская улица, 27\n37\tyandex\t41,7 м² · офис · 4 этаж из 5B\t642\tNULL\t762550\tКазанская улица, 7\n38\tyandex\t67 м² · офис · 3 этаж из 3B\t667\tNULL\t56950\tОктябрьская набережная, 104к43\n41\tyandex\t43 м² · офис · 5 этаж из 6B\t643\tNULL\t60458\tЛиговский проспект, 10/118\n",
+  "stderr": "",
+  "execution_time_ms": 387
+}

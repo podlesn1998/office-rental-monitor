@@ -61,8 +61,26 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
       const priceMatch = fullText.replace(/\s/g, "").match(/(\d{4,})\s*₽/);
       const price = priceMatch ? parseInt(priceMatch[1]) : null;
 
-      const areaMatch = fullText.match(/(\d+[,.]?\d*)\s*м²/);
-      const area = areaMatch ? parseFloat(areaMatch[1].replace(",", ".")) : null;
+      // Read title first — Yandex titles reliably contain area as "XX м² · офис"
+      const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
+      const titleText = titleEl?.textContent?.trim() ?? "";
+
+      // Extract area from title first (most reliable for Yandex)
+      let area: number | null = null;
+      const titleAreaMatch = titleText.match(/(\d+[,.]?\d*)\s*м²/);
+      if (titleAreaMatch) {
+        const val = parseFloat(titleAreaMatch[1].replace(",", "."));
+        if (val >= 10 && val <= 500) area = val;
+      }
+      // Fallback: scan fullText if title didn't yield area
+      if (!area) {
+        const areaRe = /(\d+[,.]?\d*)\s*м²/g;
+        let areaM: RegExpExecArray | null;
+        while ((areaM = areaRe.exec(fullText)) !== null) {
+          const val = parseFloat(areaM[1].replace(",", "."));
+          if (val >= 10 && val <= 500) { area = val; break; }
+        }
+      }
 
       const metroEl = container.querySelector('[class*="metro"], [class*="Metro"], [class*="underground"], [class*="Underground"]');
       let metro = "";
@@ -80,9 +98,6 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
 
       const addressEl = container.querySelector('[class*="address"], [class*="Address"], [class*="location"], [class*="Location"]');
       const address = addressEl?.textContent?.trim() ?? "";
-
-      const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
-      const titleText = titleEl?.textContent?.trim() ?? "";
 
       // Extract ceiling height from card text
       let ceilingHeight: number | null = null;
