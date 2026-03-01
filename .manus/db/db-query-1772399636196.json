@@ -1,0 +1,28 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_KomMtGDchgkpshr4gKWbJK": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_KomMtGDchgkpshr4gKWbJK": "listings"
+    },
+    {
+      "Tables_in_KomMtGDchgkpshr4gKWbJK": "scrapeLogs"
+    },
+    {
+      "Tables_in_KomMtGDchgkpshr4gKWbJK": "searchConfig"
+    },
+    {
+      "Tables_in_KomMtGDchgkpshr4gKWbJK": "telegramConfig"
+    },
+    {
+      "Tables_in_KomMtGDchgkpshr4gKWbJK": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_KomMtGDchgkpshr4gKWbJK\n__drizzle_migrations\nlistings\nscrapeLogs\nsearchConfig\ntelegramConfig\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 364
+}

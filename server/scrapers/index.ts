@@ -53,6 +53,7 @@ async function deduplicateListings(
     .where(and(eq(listings.platform, platform), inArray(listings.platformId, platformIds)));
 
   const existingIds = new Set(existing.map((e) => e.platformId));
+  console.log(`[Dedup] platform=${platform} scraped=${scraped.length} existing=${existing.length} existingIds=[${Array.from(existingIds).join(',')}]`);
 
   // Update lastSeen for existing listings
   const existingPlatformIds = scraped
@@ -123,8 +124,10 @@ async function saveNewListings(
 
   const saved: (typeof listings.$inferSelect)[] = [];
 
+  console.log(`[Save] Attempting to save ${newListings.length} new listings`);
   for (const listing of newListings) {
     try {
+      console.log(`[Save] Inserting platformId=${listing.platformId} platform=${listing.platform} district=${listing.district}`);
       await db.insert(listings).values({
         ...listing,
         isNew: true,

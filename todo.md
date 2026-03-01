@@ -144,3 +144,14 @@
 - [x] Fix saveSearchConfig auto-cleanup: also delete null-district listings when filter is active
 - [x] Cleaned DB: all 5 wrong-district/null-district listings deleted
 - [x] All 34 tests passing
+
+## Bug: Scraper Finds Nothing
+- [ ] Check scraper logs to see what's happening
+- [ ] Run test scrape and inspect raw HTML/results
+- [ ] Fix the root cause
+
+## Bug: Infinite Update Loop in UI (FIXED)
+- [x] Diagnose: triggerAll/triggerPlatform/searchConfig.update/telegram.update/test/sendPending were protectedProcedure
+- [x] When unauthenticated user clicked "Обновить", server returned UNAUTHORIZED, main.tsx did window.location.href = loginUrl → full page reload
+- [x] Fix: changed all app-specific procedures to publicProcedure (personal tool, no auth needed)
+- [x] Fix: removed redirect-to-login on UNAUTHORIZED error in main.tsx

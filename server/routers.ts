@@ -55,7 +55,7 @@ export const appRouter = router({
       return getSearchConfig();
     }),
 
-    update: protectedProcedure
+    update: publicProcedure
       .input(
         z.object({
           minArea: z.number().min(1).max(10000).optional(),
@@ -98,7 +98,7 @@ export const appRouter = router({
       };
     }),
 
-    update: protectedProcedure
+    update: publicProcedure
       .input(
         z.object({
           botToken: z.string().min(10).optional(),
@@ -111,7 +111,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    test: protectedProcedure
+    test: publicProcedure
       .input(
         z.object({
           botToken: z.string().min(10),
@@ -122,7 +122,7 @@ export const appRouter = router({
         return testTelegramConnection(input.botToken, input.chatId);
       }),
 
-    sendPending: protectedProcedure.mutation(async () => {
+    sendPending: publicProcedure.mutation(async () => {
       // Use forced send — bypasses active flag, sends all unsent listings
       const count = await sendAllListingsForced();
       return { sent: count };
@@ -162,7 +162,7 @@ export const appRouter = router({
 
   // ---- Scraper ----
   scraper: router({
-    triggerAll: protectedProcedure.mutation(async () => {
+    triggerAll: publicProcedure.mutation(async () => {
       const result = await runAllScrapers();
       // Send new listings via Telegram
       if (result.newCount > 0) {
@@ -175,7 +175,7 @@ export const appRouter = router({
       };
     }),
 
-    triggerPlatform: protectedProcedure
+    triggerPlatform: publicProcedure
       .input(z.object({ platform: z.enum(["cian", "avito", "yandex"]) }))
       .mutation(async ({ input }) => {
         const result = await runPlatformScrape(input.platform);

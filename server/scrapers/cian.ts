@@ -47,6 +47,7 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
     }> = [];
 
     const links = Array.from(document.querySelectorAll('a[href*="/rent/commercial/"]'));
+    console.log('[CIAN-parse] Total links found:', links.length);
     const seenIds: string[] = [];
 
     for (const link of links) {
@@ -59,7 +60,7 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
 
       let container: Element | null = link.parentElement;
       let depth = 0;
-      while (container && depth < 12) {
+      while (container && depth < 20) {
         const text = container.textContent ?? "";
         if (text.includes("₽/мес") && text.includes("м²")) break;
         container = container.parentElement;
@@ -155,6 +156,15 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
         const title = await page.title().catch(() => "");
         console.log(`[CIAN] Page ${pageNum} title: ${title}`);
 
+        // Wait for listing links to appear, then scroll to trigger lazy loading
+        await page.waitForSelector('a[href*="/rent/commercial/"]', { timeout: 10000 }).catch(() => {});
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+        await page.waitForTimeout(1200);
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        await page.waitForTimeout(1200);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.waitForTimeout(800);
+
         if (
           title.toLowerCase().includes("captcha") ||
           title.toLowerCase().includes("robot") ||
@@ -164,7 +174,16 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
           break;
         }
 
+        // Capture browser console logs for debugging
+        const consoleMsgs: string[] = [];
+        const consoleHandler = (msg: import('playwright-core').ConsoleMessage) => {
+          if (msg.text().includes('[CIAN-parse]')) consoleMsgs.push(msg.text());
+        };
+        page.on('console', consoleHandler);
+        
         const cards = await parseCianPage(page);
+        page.off('console', consoleHandler);
+        consoleMsgs.forEach(m => console.log(m));
         console.log(`[CIAN] Parsed ${cards.length} cards from page ${pageNum}`);
 
         if (cards.length === 0) {
