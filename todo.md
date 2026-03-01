@@ -89,3 +89,10 @@
 - [ ] Update CIAN scraper to pass district filter in URL
 - [ ] Update Yandex scraper to pass district filter in URL
 - [ ] Post-filter listings by district if scraper can't filter natively
+
+## Feature: Area & Ceiling Height on Cards
+- [x] Add ceilingHeight column to listings table
+- [x] Update CIAN scraper to extract ceiling height from card text
+- [x] Update Yandex scraper to extract ceiling height from card text
+- [x] Update listing cards UI: show area (м²) and ceiling height prominently
+- [x] Update Telegram message formatter to include area and ceiling height

@@ -7,6 +7,7 @@ import {
   MapPin,
   Train,
   Maximize2,
+  ArrowUpDown,
   ExternalLink,
   Building2,
   Filter,
@@ -40,6 +41,7 @@ interface ListingItem {
   area: number | null;
   floor: number | null;
   totalFloors: number | null;
+  ceilingHeight: number | null;
   photos: unknown;
   url: string;
   isNew: boolean;
@@ -102,12 +104,20 @@ function ListingCard({ listing }: { listing: ListingItem }) {
               <div className="text-sm text-muted-foreground">Цена не указана</div>
             )}
           </div>
-          {listing.area && (
-            <div className="flex items-center gap-1 text-muted-foreground text-sm shrink-0">
-              <Maximize2 size={13} />
-              <span>{listing.area} м²</span>
-            </div>
-          )}
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {listing.area && (
+              <div className="flex items-center gap-1 text-foreground font-semibold text-sm">
+                <Maximize2 size={13} className="text-primary" />
+                <span>{listing.area} м²</span>
+              </div>
+            )}
+            {listing.ceilingHeight && (
+              <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                <ArrowUpDown size={11} />
+                <span>потолок {(listing.ceilingHeight / 100).toFixed(1)} м</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {listing.address && (

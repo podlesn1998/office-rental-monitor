@@ -20,6 +20,9 @@ export function formatListingMessage(listing: Listing): string {
     ? `${Number(listing.price).toLocaleString("ru-RU")} ₽/мес`
     : "Цена не указана";
   const area = listing.area ? `${listing.area} м²` : "Площадь не указана";
+  const ceilingHeight = (listing as any).ceilingHeight
+    ? `потолок ${((listing as any).ceilingHeight / 100).toFixed(1)} м`
+    : null;
   const floor = listing.floor
     ? `${listing.floor}${listing.totalFloors ? `/${listing.totalFloors}` : ""} эт.`
     : null;
@@ -39,7 +42,7 @@ export function formatListingMessage(listing: Listing): string {
     metro,
     "",
     `💰 <b>${price}</b>`,
-    `📐 <b>${area}</b>${floor ? ` · ${floor}` : ""}`,
+    `📐 <b>${area}</b>${ceilingHeight ? ` · ↕ ${ceilingHeight}` : ""}${floor ? ` · ${floor}` : ""}`,
     "",
   ];
 

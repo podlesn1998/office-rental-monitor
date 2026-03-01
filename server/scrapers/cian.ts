@@ -36,11 +36,13 @@ function buildCianUrl(params: SearchParams, page = 1): string {
 async function parseCianPage(page: import("playwright-core").Page): Promise<Array<{
   id: string; href: string; price: number | null; area: number | null;
   metro: string; metroMin: number | null; address: string; imgSrc: string; title: string;
+  ceilingHeight: number | null;
 }>> {
   return page.evaluate(() => {
     const cardResults: Array<{
       id: string; href: string; price: number | null; area: number | null;
       metro: string; metroMin: number | null; address: string; imgSrc: string; title: string;
+      ceilingHeight: number | null;
     }> = [];
 
     const links = Array.from(document.querySelectorAll('a[href*="/rent/commercial/"]'));
@@ -105,7 +107,16 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
       const titleEl = container.querySelector('[class*="title"], [class*="Title"], [class*="name"]');
       const titleText = titleEl?.textContent?.trim() ?? "";
 
-      cardResults.push({ id, href, price, area, metro, metroMin, address, imgSrc, title: titleText });
+      // Extract ceiling height: look for patterns like "3 м", "2.7 м", "потолки 3м", "высота потолков"
+      let ceilingHeight: number | null = null;
+      const ceilMatch = fullText.match(/(?:потолк[иа]?|высот[аы]\s+потолк[иа]?)[^\d]*(\d+[,.]?\d*)\s*м/i)
+        || fullText.match(/высот[аы][^\d]*(\d+[,.]?\d*)\s*м/i);
+      if (ceilMatch) {
+        const val = parseFloat(ceilMatch[1].replace(",", "."));
+        if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
+      }
+
+      cardResults.push({ id, href, price, area, metro, metroMin, address, imgSrc, title: titleText, ceilingHeight });
     }
 
     return cardResults;
@@ -163,6 +174,7 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
             area: card.area ? Math.round(card.area) : null,
             floor: null,
             totalFloors: null,
+            ceilingHeight: card.ceilingHeight ?? null,
             description: null,
             photos: card.imgSrc ? [card.imgSrc] : [],
             url: cleanUrl || card.href,

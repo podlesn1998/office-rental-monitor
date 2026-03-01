@@ -40,6 +40,7 @@ export const listings = mysqlTable("listings", {
   area: int("area"), // sq meters
   floor: int("floor"),
   totalFloors: int("totalFloors"),
+  ceilingHeight: int("ceilingHeight"), // ceiling height in cm (e.g. 300 = 3.0m)
   description: text("description"),
   photos: json("photos").$type<string[]>(),
   url: text("url").notNull(),

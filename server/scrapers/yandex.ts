@@ -26,11 +26,13 @@ function buildYandexUrl(params: SearchParams, page = 1): string {
 async function parseYandexPage(page: import("playwright-core").Page): Promise<Array<{
   id: string; href: string; price: number | null; area: number | null;
   metro: string; metroMin: number | null; address: string; title: string;
+  ceilingHeight: number | null;
 }>> {
   return page.evaluate(() => {
     const cardResults: Array<{
       id: string; href: string; price: number | null; area: number | null;
       metro: string; metroMin: number | null; address: string; title: string;
+      ceilingHeight: number | null;
     }> = [];
 
     const links = Array.from(document.querySelectorAll('a[href*="/offer/"]'));
@@ -82,7 +84,16 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
       const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
       const titleText = titleEl?.textContent?.trim() ?? "";
 
-      cardResults.push({ id, href, price, area, metro, metroMin, address, title: titleText });
+      // Extract ceiling height from card text
+      let ceilingHeight: number | null = null;
+      const ceilMatch = fullText.match(/(?:потолк[иа]?|высот[аы]\s+потолк[иа]?)[^\d]*(\d+[,.]?\d*)\s*м/i)
+        || fullText.match(/высот[аы][^\d]*(\d+[,.]?\d*)\s*м/i);
+      if (ceilMatch) {
+        const val = parseFloat(ceilMatch[1].replace(",", "."));
+        if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
+      }
+
+      cardResults.push({ id, href, price, area, metro, metroMin, address, title: titleText, ceilingHeight });
     }
 
     return cardResults;
@@ -155,6 +166,7 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
           area: card.area ? Math.round(card.area) : null,
           floor: null,
           totalFloors: null,
+          ceilingHeight: card.ceilingHeight ?? null,
           description: null,
           photos: [],
           url: card.href,
