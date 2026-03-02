@@ -260,6 +260,7 @@ export default function Home() {
     onSuccess: (res) => {
       toast.success(`Готово! Найдено: ${res.found}, новых: ${res.newCount}`);
       refetch();
+      utils.listings.stats.invalidate();
     },
     onError: () => toast.error("Ошибка при запуске парсера"),
   });
