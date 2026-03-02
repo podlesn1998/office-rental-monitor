@@ -229,6 +229,7 @@ export default function Home() {
   const [platform, setPlatform] = useState<Platform | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<ListingStatus | undefined>(undefined);
   const [offset, setOffset] = useState(0);
+  const [isScraping, setIsScraping] = useState(false);
   const LIMIT = 15;
 
   const utils = trpc.useUtils();
@@ -256,13 +257,28 @@ export default function Home() {
   );
   const { data: stats } = trpc.listings.stats.useQuery(undefined, { refetchInterval: 60000 });
 
+  // Poll scrape progress while running
+  const { data: progress } = trpc.scraper.progress.useQuery(undefined, {
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return (data?.isRunning || isScraping) ? 1500 : false;
+    },
+    refetchIntervalInBackground: true,
+  });
+
   const triggerMutation = trpc.scraper.triggerAll.useMutation({
+    onMutate: () => setIsScraping(true),
     onSuccess: (res) => {
       toast.success(`Готово! Найдено: ${res.found}, новых: ${res.newCount}`);
       refetch();
       utils.listings.stats.invalidate();
+      utils.scraper.progress.invalidate();
+      setIsScraping(false);
     },
-    onError: () => toast.error("Ошибка при запуске парсера"),
+    onError: () => {
+      toast.error("Ошибка при запуске парсера");
+      setIsScraping(false);
+    },
   });
 
   const handleStatusChange = (id: number, status: ListingStatus) => {
@@ -286,23 +302,54 @@ export default function Home() {
               {stats && (
                 <span className="text-xs text-muted-foreground ml-2">{stats.total} объявл.</span>
               )}
-              {stats?.lastScrapeAt && (
+              {/* Progress indicator while scraping */}
+              {progress?.isRunning ? (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {(["cian", "yandex", "avito"] as const).map((p) => {
+                    const ps = progress.platforms[p];
+                    if (ps.status === "skipped") return null;
+                    const label = p === "cian" ? "ЦИАН" : p === "yandex" ? "Яндекс" : "Авито";
+                    return (
+                      <span
+                        key={p}
+                        className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                          ps.status === "running"
+                            ? "bg-primary/20 text-primary animate-pulse"
+                            : ps.status === "done"
+                            ? "bg-green-500/20 text-green-400"
+                            : ps.status === "error"
+                            ? "bg-red-500/20 text-red-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {ps.status === "running" && <RefreshCw size={8} className="animate-spin" />}
+                        {ps.status === "done" && <span>✓</span>}
+                        {ps.status === "error" && <span>✗</span>}
+                        {label}
+                        {ps.status === "done" && ps.found > 0 && (
+                          <span className="opacity-70"> {ps.found}</span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : stats?.lastScrapeAt ? (
                 <div className="text-[10px] text-muted-foreground/60 flex items-center gap-1 mt-0.5">
                   <Clock size={9} />
                   <span>Обновлено {new Date(stats.lastScrapeAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
           <Button
             size="sm"
             variant="outline"
             onClick={() => triggerMutation.mutate()}
-            disabled={triggerMutation.isPending}
+            disabled={triggerMutation.isPending || progress?.isRunning}
             className="h-8 px-3 text-xs gap-1.5"
           >
-            <RefreshCw size={13} className={triggerMutation.isPending ? "animate-spin" : ""} />
-            {triggerMutation.isPending ? "Поиск..." : "Обновить"}
+            <RefreshCw size={13} className={(triggerMutation.isPending || progress?.isRunning) ? "animate-spin" : ""} />
+            {(triggerMutation.isPending || progress?.isRunning) ? "Поиск..." : "Обновить"}
           </Button>
         </div>
       </div>

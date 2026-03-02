@@ -16,6 +16,7 @@ import {
   updateListingStatus,
 } from "./db";
 import { runAllScrapers, runPlatformScrape } from "./scrapers/index";
+import { scrapeProgress } from "./scrapeProgress";
 import { sendPendingListings, sendAllListingsForced, testTelegramConnection } from "./telegram";
 import { registerTelegramWebhook } from "./scheduler";
 
@@ -186,6 +187,10 @@ export const appRouter = router({
 
   // ---- Scraper ----
   scraper: router({
+    progress: publicProcedure.query(() => {
+      return scrapeProgress;
+    }),
+
     triggerAll: publicProcedure.mutation(async () => {
       const result = await runAllScrapers();
       // Send new listings via Telegram

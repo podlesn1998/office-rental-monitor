@@ -177,6 +177,12 @@
 - [x] All 34 tests passing
 
 ## Feature: Date/Time on Listing Cards + Last Update Time
-- [ ] Check if createdAt field exists in listings schema
-- [ ] Add createdAt to listing card UI
-- [ ] Add last scrape time to page header
+- [x] Check if createdAt field exists in listings schema
+- [x] Add createdAt to listing card UI
+- [x] Add last scrape time to page header
+- [x] Fix: lastScrapeAt not updating after "Обновить" — invalidate listings.stats cache in triggerMutation.onSuccess
+
+## Feature: Scraping Progress Indicator
+- [x] Add per-platform scrape progress state on server (pending/running/done/error) — scrapeProgress.ts
+- [x] Expose progress via tRPC polling endpoint (scraper.progress query)
+- [x] Show progress UI in header during scraping (ЦИАН ✓ / Янекс ...) with polling every 1.5s

@@ -4,6 +4,11 @@ import { getDb } from "../db";
 import { scrapeCian } from "./cian";
 import { scrapeAvito } from "./avito";
 import { scrapeYandex } from "./yandex";
+import {
+  resetProgress,
+  updatePlatformProgress,
+  finishProgress,
+} from "../scrapeProgress";
 
 export type Platform = "cian" | "avito" | "yandex";
 
@@ -272,19 +277,33 @@ export async function runAllScrapers(): Promise<ScrapeResult> {
     return { platform: "all", found: 0, newCount: 0, newListings: [] };
   }
 
+  // Reset progress state
+  resetProgress(platforms);
+
   const allNew: (typeof listings.$inferSelect)[] = [];
   let totalFound = 0;
   let totalNew = 0;
 
   for (const platform of platforms) {
+    // Mark platform as running before starting
+    updatePlatformProgress(platform, "running", 0, 0);
     const result = await runPlatformScrape(platform);
     totalFound += result.found;
     totalNew += result.newCount;
     allNew.push(...result.newListings);
+    // Update progress with result
+    updatePlatformProgress(
+      platform,
+      result.error ? "error" : "done",
+      result.found,
+      result.newCount,
+      result.error
+    );
     // Delay between platforms
     await new Promise((r) => setTimeout(r, 3000));
   }
 
+  finishProgress();
   console.log(`[Scraper] Full run complete: ${totalFound} found, ${totalNew} new`);
   return {
     platform: "all",
