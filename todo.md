@@ -186,3 +186,15 @@
 - [x] Add per-platform scrape progress state on server (pending/running/done/error) — scrapeProgress.ts
 - [x] Expose progress via tRPC polling endpoint (scraper.progress query)
 - [x] Show progress UI in header during scraping (ЦИАН ✓ / Янекс ...) with polling every 1.5s
+
+## Feature: Listing Quality Score
+- [x] Add `score` integer column to listings table (0-100)
+- [x] Create scoreListing.ts utility with scoring algorithm
+- [x] Scoring criteria: floor=1 (+35), separateEntrance in title/desc (+35), ceilingHeight>=3.5 (+30)
+- [x] Partial scoring: floor=2 (+15), floor=3 (+5), ceilingHeight>=3.0 (+18), ceilingHeight>=2.7 (+8)
+- [x] Unknown floor/ceiling: +10 each (might be ideal)
+- [x] Compute score when saving new listings in scraper pipeline
+- [x] Backfill score for existing 8 listings in DB (all scored 20 — no floor/ceiling data yet)
+- [x] Show score badge on listing cards (green ★ 80+, yellow ◐ 50-79, orange 25-49, gray <25)
+- [x] Sort listings by score DESC then firstSeen DESC
+- [x] Show score in Telegram notification message (⭐/🔶/🔸/⬜ + score/100)

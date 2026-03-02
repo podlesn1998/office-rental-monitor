@@ -1,0 +1,91 @@
+{
+  "query": "SELECT id, platform, SUBSTRING(title, 1, 40) as title, status, isNew, DATE(createdAt) as created, DATE(firstSeen) as firstSeen FROM listings ORDER BY createdAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platform, SUBSTRING(title, 1, 40) as title, status, isNew, DATE(createdAt) as created, DATE(firstSeen) as firstSeen FROM listings ORDER BY createdAt DESC;",
+  "rows": [
+    {
+      "id": "60001",
+      "platform": "yandex",
+      "title": "40 м² · офис · 2 этаж из 2B",
+      "status": "new",
+      "isNew": "0",
+      "created": "2026-03-02",
+      "firstSeen": "2026-03-02"
+    },
+    {
+      "id": "30056",
+      "platform": "cian",
+      "title": "Своб. назнач.Артиллерийская ул.от 32 м² ",
+      "status": "interesting",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    },
+    {
+      "id": "30035",
+      "platform": "yandex",
+      "title": "60 м² · офис · 3 этаж из 5C",
+      "status": "new",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    },
+    {
+      "id": "30036",
+      "platform": "yandex",
+      "title": "41,7 м² · офис · 4 этаж из 5B",
+      "status": "new",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    },
+    {
+      "id": "30037",
+      "platform": "yandex",
+      "title": "46 м² · офис · 1 этаж из 5",
+      "status": "new",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    },
+    {
+      "id": "30038",
+      "platform": "yandex",
+      "title": "43 м² · офис · 5 этаж из 6B",
+      "status": "interesting",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    },
+    {
+      "id": "30041",
+      "platform": "yandex",
+      "title": "46 м² · офис · 4 этаж из 6B",
+      "status": "new",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    },
+    {
+      "id": "30027",
+      "platform": "yandex",
+      "title": "60 м² · офис · 3 этаж из 5C",
+      "status": "new",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    },
+    {
+      "id": "30030",
+      "platform": "yandex",
+      "title": "54,8 м² · офис · 2 этаж из 5B",
+      "status": "new",
+      "isNew": "0",
+      "created": "2026-03-01",
+      "firstSeen": "2026-03-01"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatform\ttitle\tstatus\tisNew\tcreated\tfirstSeen\n60001\tyandex\t40 м² · офис · 2 этаж из 2B\tnew\t0\t2026-03-02\t2026-03-02\n30056\tcian\tСвоб. назнач.Артиллерийская ул.от 32 м² \tinteresting\t0\t2026-03-01\t2026-03-01\n30035\tyandex\t60 м² · офис · 3 этаж из 5C\tnew\t0\t2026-03-01\t2026-03-01\n30036\tyandex\t41,7 м² · офис · 4 этаж из 5B\tnew\t0\t2026-03-01\t2026-03-01\n30037\tyandex\t46 м² · офис · 1 этаж из 5\tnew\t0\t2026-03-01\t2026-03-01\n30038\tyandex\t43 м² · офис · 5 этаж из 6B\tinteresting\t0\t2026-03-01\t2026-03-01\n30041\tyandex\t46 м² · офис · 4 этаж из 6B\tnew\t0\t2026-03-01\t2026-03-01\n30027\tyandex\t60 м² · офис · 3 этаж из 5C\tnew\t0\t2026-03-01\t2026-03-01\n30030\tyandex\t54,8 м² · офис · 2 этаж из 5B\tnew\t0\t2026-03-01\t2026-03-01\n",
+  "stderr": "",
+  "execution_time_ms": 346
+}

@@ -9,6 +9,7 @@ import {
   updatePlatformProgress,
   finishProgress,
 } from "../scrapeProgress";
+import { computeScore } from "../utils/scoreListing";
 
 export type Platform = "cian" | "avito" | "yandex";
 
@@ -133,10 +134,18 @@ async function saveNewListings(
   for (const listing of newListings) {
     try {
       console.log(`[Save] Inserting platformId=${listing.platformId} platform=${listing.platform} district=${listing.district}`);
+      const score = computeScore({
+        floor: listing.floor,
+        totalFloors: listing.totalFloors,
+        ceilingHeight: listing.ceilingHeight,
+        title: listing.title,
+        description: listing.description,
+      });
       await db.insert(listings).values({
         ...listing,
         isNew: true,
         isSent: false,
+        score,
         firstSeen: new Date(),
         lastSeen: new Date(),
       });

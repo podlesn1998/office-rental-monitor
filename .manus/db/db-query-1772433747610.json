@@ -1,0 +1,43 @@
+{
+  "query": "SELECT COUNT(*) as total FROM listings; SELECT id, platform, title, status, isNew, createdAt FROM listings ORDER BY createdAt ASC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT COUNT(*) as total FROM listings; SELECT id, platform, title, status, isNew, createdAt FROM listings ORDER BY createdAt ASC LIMIT 10;",
+  "rows": [
+    {
+      "total": "9"
+    },
+    {
+      "total": "id\tplatform\ttitle\tstatus\tisNew\tcreatedAt"
+    },
+    {
+      "total": "30030\tyandex\t54,8 м² · офис · 2 этаж из 5B\tnew\t0\t2026-03-01 21:57:39"
+    },
+    {
+      "total": "30027\tyandex\t60 м² · офис · 3 этаж из 5C\tnew\t0\t2026-03-01 21:57:39"
+    },
+    {
+      "total": "30035\tyandex\t60 м² · офис · 3 этаж из 5C\tnew\t0\t2026-03-01 21:57:40"
+    },
+    {
+      "total": "30037\tyandex\t46 м² · офис · 1 этаж из 5\tnew\t0\t2026-03-01 21:57:40"
+    },
+    {
+      "total": "30036\tyandex\t41,7 м² · офис · 4 этаж из 5B\tnew\t0\t2026-03-01 21:57:40"
+    },
+    {
+      "total": "30041\tyandex\t46 м² · офис · 4 этаж из 6B\tnew\t0\t2026-03-01 21:57:40"
+    },
+    {
+      "total": "30038\tyandex\t43 м² · офис · 5 этаж из 6B\tinteresting\t0\t2026-03-01 21:57:40"
+    },
+    {
+      "total": "30056\tcian\tСвоб. назнач.Артиллерийская ул.от 32 м² от 65 000 ₽/мес.\tinteresting\t0\t2026-03-01 22:05:32"
+    },
+    {
+      "total": "60001\tyandex\t40 м² · офис · 2 этаж из 2B\tnew\t0\t2026-03-02 06:41:22"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n9\nid\tplatform\ttitle\tstatus\tisNew\tcreatedAt\n30030\tyandex\t54,8 м² · офис · 2 этаж из 5B\tnew\t0\t2026-03-01 21:57:39\n30027\tyandex\t60 м² · офис · 3 этаж из 5C\tnew\t0\t2026-03-01 21:57:39\n30035\tyandex\t60 м² · офис · 3 этаж из 5C\tnew\t0\t2026-03-01 21:57:40\n30037\tyandex\t46 м² · офис · 1 этаж из 5\tnew\t0\t2026-03-01 21:57:40\n30036\tyandex\t41,7 м² · офис · 4 этаж из 5B\tnew\t0\t2026-03-01 21:57:40\n30041\tyandex\t46 м² · офис · 4 этаж из 6B\tnew\t0\t2026-03-01 21:57:40\n30038\tyandex\t43 м² · офис · 5 этаж из 6B\tinteresting\t0\t2026-03-01 21:57:40\n30056\tcian\tСвоб. назнач.Артиллерийская ул.от 32 м² от 65 000 ₽/мес.\tinteresting\t0\t2026-03-01 22:05:32\n60001\tyandex\t40 м² · офис · 2 этаж из 2B\tnew\t0\t2026-03-02 06:41:22\n",
+  "stderr": "",
+  "execution_time_ms": 408
+}

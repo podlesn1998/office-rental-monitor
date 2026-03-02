@@ -35,6 +35,10 @@ export function formatListingMessage(listing: Listing): string {
     }
   }
 
+  const score = (listing as any).score as number | undefined;
+  const scoreEmoji = score == null ? "" : score >= 80 ? "⭐" : score >= 50 ? "🔶" : score >= 25 ? "🔸" : "⬜";
+  const scoreLine = score != null ? `${scoreEmoji} Оценка: <b>${score}/100</b>` : null;
+
   const lines: string[] = [
     `${platform.emoji} <b>${platform.name}</b> — Новое объявление!`,
     "",
@@ -43,6 +47,7 @@ export function formatListingMessage(listing: Listing): string {
     "",
     `💰 <b>${price}</b>`,
     `📐 <b>${area}</b>${ceilingHeight ? ` · ↕ ${ceilingHeight}` : ""}${floor ? ` · ${floor}` : ""}`,
+    scoreLine ?? "",
     "",
   ];
 

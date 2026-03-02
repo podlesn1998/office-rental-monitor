@@ -1,0 +1,25 @@
+{
+  "query": "SELECT DATE(createdAt) as date, COUNT(*) as count, status FROM listings GROUP BY DATE(createdAt), status ORDER BY date DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT DATE(createdAt) as date, COUNT(*) as count, status FROM listings GROUP BY DATE(createdAt), status ORDER BY date DESC;",
+  "rows": [
+    {
+      "date": "2026-03-02",
+      "count": "1",
+      "status": "new"
+    },
+    {
+      "date": "2026-03-01",
+      "count": "6",
+      "status": "new"
+    },
+    {
+      "date": "2026-03-01",
+      "count": "2",
+      "status": "interesting"
+    }
+  ],
+  "messages": [],
+  "stdout": "date\tcount\tstatus\n2026-03-02\t1\tnew\n2026-03-01\t6\tnew\n2026-03-01\t2\tinteresting\n",
+  "stderr": "",
+  "execution_time_ms": 365
+}

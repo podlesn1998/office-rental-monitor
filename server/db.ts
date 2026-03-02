@@ -102,7 +102,7 @@ export async function getListings(opts: {
       .select()
       .from(listings)
       .where(where)
-      .orderBy(desc(listings.firstSeen))
+      .orderBy(desc(listings.score), desc(listings.firstSeen))
       .limit(limit)
       .offset(offset),
     db

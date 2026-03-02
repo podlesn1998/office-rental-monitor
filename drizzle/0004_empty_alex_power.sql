@@ -1,0 +1,1 @@
+ALTER TABLE `listings` ADD `score` int DEFAULT 0 NOT NULL;

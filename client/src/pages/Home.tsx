@@ -54,6 +54,7 @@ interface ListingItem {
   isNew: boolean;
   status: ListingStatus;
   createdAt: Date | string | null;
+  score: number;
 }
 
 function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStatusChange: (id: number, status: ListingStatus) => void }) {
@@ -115,6 +116,22 @@ function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStat
             )}
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
+            {/* Score badge */}
+            <div
+              className={`flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                listing.score >= 80
+                  ? "bg-green-500/15 text-green-400 border-green-500/30"
+                  : listing.score >= 50
+                  ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
+                  : listing.score >= 25
+                  ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}
+              title={`Оценка соответствия идеалу`}
+            >
+              {listing.score >= 80 ? "★" : listing.score >= 50 ? "◐" : "○"}
+              <span>{listing.score}</span>
+            </div>
             {listing.area && (
               <div className="flex items-center gap-1 text-foreground font-semibold text-sm">
                 <Maximize2 size={13} className="text-primary" />

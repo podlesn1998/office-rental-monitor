@@ -49,6 +49,7 @@ export const listings = mysqlTable("listings", {
   isSent: boolean("isSent").default(false).notNull(),
   status: mysqlEnum("status", ["new", "viewed", "interesting"]).default("new").notNull(),
   telegramMessageId: bigint("telegramMessageId", { mode: "number" }), // Telegram message ID for inline button updates
+  score: int("score").default(0).notNull(), // quality score 0-100 based on ideal criteria
   firstSeen: timestamp("firstSeen").defaultNow().notNull(),
   lastSeen: timestamp("lastSeen").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
