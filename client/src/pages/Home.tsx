@@ -18,6 +18,7 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useState as useStateLocal, useRef, useEffect } from "react";
 
 type Platform = "cian" | "avito" | "yandex";
 
@@ -57,7 +58,64 @@ interface ListingItem {
   score: number;
 }
 
+// Compute score breakdown on the frontend (mirrors server/utils/scoreListing.ts)
+function computeScoreBreakdown(listing: ListingItem): { label: string; pts: number; max: number; icon: string }[] {
+  const breakdown: { label: string; pts: number; max: number; icon: string }[] = [];
+
+  // Floor
+  if (listing.floor == null) {
+    breakdown.push({ label: "Этаж не указан", pts: 10, max: 35, icon: "🏢" });
+  } else if (listing.floor === 1) {
+    breakdown.push({ label: "1-й этаж — идеально", pts: 35, max: 35, icon: "🏢" });
+  } else if (listing.floor === 2) {
+    breakdown.push({ label: `2-й этаж`, pts: 15, max: 35, icon: "🏢" });
+  } else if (listing.floor === 3) {
+    breakdown.push({ label: `3-й этаж`, pts: 5, max: 35, icon: "🏢" });
+  } else {
+    breakdown.push({ label: `${listing.floor}-й этаж`, pts: 0, max: 35, icon: "🏢" });
+  }
+
+  // Entrance
+  const ENTRANCE_KW = ["отдельный вход", "собственный вход", "свой вход", "вход с улицы", "вход со двора", "отдельный выход"];
+  const haystack = `${listing.title ?? ""} ${(listing as any).description ?? ""}`.toLowerCase();
+  const hasEntrance = ENTRANCE_KW.some((kw) => haystack.includes(kw));
+  if (hasEntrance) {
+    breakdown.push({ label: "Отдельный вход — есть", pts: 35, max: 35, icon: "🚪" });
+  } else if (haystack.includes("вход")) {
+    breakdown.push({ label: "Вход упоминается", pts: 5, max: 35, icon: "🚪" });
+  } else {
+    breakdown.push({ label: "Отд. вход не указан", pts: 0, max: 35, icon: "🚪" });
+  }
+
+  // Ceiling
+  if (listing.ceilingHeight == null) {
+    breakdown.push({ label: "Потолок не указан", pts: 10, max: 30, icon: "↕️" });
+  } else {
+    const h = listing.ceilingHeight / 100;
+    if (h >= 3.5) breakdown.push({ label: `Потолок ${h.toFixed(1)} м — идеально`, pts: 30, max: 30, icon: "↕️" });
+    else if (h >= 3.0) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 18, max: 30, icon: "↕️" });
+    else if (h >= 2.7) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 8, max: 30, icon: "↕️" });
+    else breakdown.push({ label: `Потолок ${h.toFixed(1)} м — низко`, pts: 0, max: 30, icon: "↕️" });
+  }
+
+  return breakdown;
+}
+
 function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStatusChange: (id: number, status: ListingStatus) => void }) {
+  const [showBreakdown, setShowBreakdown] = useStateLocal(false);
+  const breakdownRef = useRef<HTMLDivElement>(null);
+
+  // Close popover on outside click
+  useEffect(() => {
+    if (!showBreakdown) return;
+    const handler = (e: MouseEvent) => {
+      if (breakdownRef.current && !breakdownRef.current.contains(e.target as Node)) {
+        setShowBreakdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showBreakdown]);
   const platform = listing.platform;
   const photos = Array.isArray(listing.photos) ? (listing.photos as string[]) : [];
   const price = listing.price ? Number(listing.price).toLocaleString("ru-RU") : null;
@@ -116,21 +174,63 @@ function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStat
             )}
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            {/* Score badge */}
-            <div
-              className={`flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-                listing.score >= 80
-                  ? "bg-green-500/15 text-green-400 border-green-500/30"
-                  : listing.score >= 50
-                  ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
-                  : listing.score >= 25
-                  ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
-                  : "bg-muted text-muted-foreground border-border"
-              }`}
-              title={`Оценка соответствия идеалу`}
-            >
-              {listing.score >= 80 ? "★" : listing.score >= 50 ? "◐" : "○"}
-              <span>{listing.score}</span>
+            {/* Score badge with breakdown popover */}
+            <div className="relative" ref={breakdownRef}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowBreakdown((v) => !v); }}
+                className={`flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full border cursor-pointer transition-opacity hover:opacity-80 ${
+                  listing.score >= 80
+                    ? "bg-green-500/15 text-green-400 border-green-500/30"
+                    : listing.score >= 50
+                    ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
+                    : listing.score >= 25
+                    ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
+                    : "bg-muted text-muted-foreground border-border"
+                }`}
+              >
+                {listing.score >= 80 ? "★" : listing.score >= 50 ? "◐" : "○"}
+                <span>{listing.score}</span>
+              </button>
+
+              {showBreakdown && (() => {
+                const bd = computeScoreBreakdown(listing);
+                return (
+                  <div
+                    className="absolute right-0 top-7 z-50 w-56 rounded-xl border border-border shadow-xl p-3"
+                    style={{ background: "oklch(0.18 0.02 250)" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="text-[11px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Расшифровка оценки</div>
+                    <div className="space-y-2">
+                      {bd.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-base leading-none">{item.icon}</span>
+                            <span className="text-xs text-foreground/80 truncate">{item.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`text-xs font-bold ${
+                              item.pts === item.max ? "text-green-400" :
+                              item.pts > 0 ? "text-yellow-400" : "text-muted-foreground"
+                            }`}>
+                              +{item.pts}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground/50">/{item.max}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2.5 pt-2 border-t border-border flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Итого</span>
+                      <span className={`text-sm font-bold ${
+                        listing.score >= 80 ? "text-green-400" :
+                        listing.score >= 50 ? "text-yellow-400" :
+                        listing.score >= 25 ? "text-orange-400" : "text-muted-foreground"
+                      }`}>{listing.score}/100</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
             {listing.area && (
               <div className="flex items-center gap-1 text-foreground font-semibold text-sm">

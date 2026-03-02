@@ -198,3 +198,7 @@
 - [x] Show score badge on listing cards (green ★ 80+, yellow ◐ 50-79, orange 25-49, gray <25)
 - [x] Sort listings by score DESC then firstSeen DESC
 - [x] Show score in Telegram notification message (⭐/🔶/🔸/⬜ + score/100)
+
+## Feature: Score Breakdown Popover
+- [x] Compute scoreBreakdown (details array) on frontend from listing data using same algorithm
+- [x] Show popover/tooltip on score badge click with breakdown lines (floor, entrance, ceiling)
