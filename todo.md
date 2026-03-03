@@ -210,3 +210,10 @@
 - [x] Send new listings to "Новые" topic (threadNew) via sendPendingListings
 - [x] Send notification to "Интересные" topic when user marks listing as interesting
 - [x] Send notification to "Просмотренные" topic when user marks listing as viewed
+
+## Feature: Move Message Between Telegram Topics on Status Change
+- [x] Add deleteMessage helper to telegram.ts
+- [x] In callback handler: when status=interesting and threadInteresting configured, delete original message and re-send to threadInteresting
+- [x] In callback handler: when status=viewed and threadViewed configured, delete original message and re-send to threadViewed
+- [x] Skip updateMessageKeyboard when moving (message is deleted, no need to edit keyboard)
+- [x] If deletion fails (no permission), fall back to just sending to target topic without deleting (deleteMessage returns bool, error is swallowed)

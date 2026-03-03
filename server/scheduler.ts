@@ -85,6 +85,7 @@ export async function telegramWebhookHandler(
   res: { json: (data: unknown) => void; status: (code: number) => { json: (data: unknown) => void } }
 ): Promise<void> {
   try {
+    console.log("[Telegram Webhook] Received update:", JSON.stringify(req.body).slice(0, 500));
     await handleTelegramUpdate(req.body);
     res.json({ ok: true });
   } catch (err) {

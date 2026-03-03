@@ -397,6 +397,24 @@ export async function testTelegramConnection(
 }
 
 /**
+ * Delete a Telegram message.
+ */
+async function deleteMessage(botToken: string, chatId: string, messageId: number): Promise<boolean> {
+  try {
+    const res = await fetch(`${TELEGRAM_API}/bot${botToken}/deleteMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, message_id: messageId }),
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = (await res.json()) as { ok: boolean };
+    return data.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Answer a Telegram callback query (removes loading spinner on button).
  */
 async function answerCallbackQuery(botToken: string, callbackQueryId: string, text?: string): Promise<void> {
@@ -469,20 +487,27 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
        await updateListingStatus(listingId, newStatus);
       const statusText = newStatus === "viewed" ? "Просмотрено" : newStatus === "interesting" ? "Добавлено в Интересные" : "Статус сброшен";
       await answerCallbackQuery(config.botToken, callbackId, `✅ ${statusText}`);
-      if (callbackMessageId && newStatus !== "new") {
+      // Move message to target topic thread if configured
+      const targetThread = newStatus === "interesting" ? config.threadInteresting : newStatus === "viewed" ? config.threadViewed : null;
+      // Only update keyboard if NOT moving to another topic (message will be deleted)
+      if (callbackMessageId && newStatus !== "new" && !targetThread) {
         await updateMessageKeyboard(config.botToken, callbackChatId, callbackMessageId, newStatus, listingId);
       }
-      // Forward to topic thread if configured
-      if (newStatus === "interesting" && config.threadInteresting) {
-        const db2 = await getDb();
-        const found = db2 ? await db2.select().from(listings).where(eq(listings.id, listingId)).limit(1) : [];
-        if (found[0]) await sendListingNotification(config.botToken, config.chatId!, found[0] as Listing, config.threadInteresting);
-      } else if (newStatus === "viewed" && config.threadViewed) {
+      if (targetThread && config.chatId) {
         const db2 = await getDb();
         const found = db2 ? await db2.select().from(listings).where(eq(listings.id, listingId)).limit(1) : [];
         if (found[0]) {
-          const viewedMsg = `👁 <b>Просмотрено</b>\n\n${formatListingMessage(found[0] as Listing)}`;
-          await sendTelegramMessage(config.botToken, config.chatId!, viewedMsg, { message_thread_id: config.threadViewed });
+          // Delete original message from current topic (move semantics)
+          if (callbackMessageId) {
+            await deleteMessage(config.botToken, callbackChatId, callbackMessageId);
+          }
+          // Re-send to target topic
+          if (newStatus === "interesting") {
+            await sendListingNotification(config.botToken, config.chatId, found[0] as Listing, targetThread);
+          } else if (newStatus === "viewed") {
+            const viewedMsg = `👁 <b>Просмотрено</b>\n\n${formatListingMessage(found[0] as Listing)}`;
+            await sendTelegramMessage(config.botToken, config.chatId, viewedMsg, { message_thread_id: targetThread });
+          }
         }
       }
     } else {
