@@ -144,11 +144,13 @@ function buildListingKeyboard(listingId: number) {
 async function sendListingNotification(
   botToken: string,
   chatId: string,
-  listing: Listing
+  listing: Listing,
+  threadId?: number | null
 ): Promise<number | null> {
   const text = formatListingMessage(listing);
   const photos = (listing.photos as string[]) ?? [];
   const replyMarkup = buildListingKeyboard(listing.id);
+  const threadExtra = threadId ? { message_thread_id: threadId } : {};
 
   if (photos.length > 0) {
     try {
@@ -157,16 +159,16 @@ async function sendListingNotification(
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+         body: JSON.stringify({
           chat_id: chatId,
           photo: photos[0],
           caption: text.slice(0, 1024), // Telegram caption limit
           parse_mode: "HTML",
           reply_markup: replyMarkup,
+          ...threadExtra,
         }),
         signal: AbortSignal.timeout(10000),
       });
-
       if (response.ok) {
         const data = await response.json() as { result?: { message_id?: number } };
         return data.result?.message_id ?? null;
@@ -180,7 +182,7 @@ async function sendListingNotification(
           const retry = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId, photo: photos[0], caption: text.slice(0, 1024), parse_mode: "HTML", reply_markup: replyMarkup }),
+            body: JSON.stringify({ chat_id: chatId, photo: photos[0], caption: text.slice(0, 1024), parse_mode: "HTML", reply_markup: replyMarkup, ...threadExtra }),
             signal: AbortSignal.timeout(10000),
           });
           if (retry.ok) {
@@ -209,6 +211,7 @@ async function sendListingNotification(
         parse_mode: "HTML",
         disable_web_page_preview: false,
         reply_markup: replyMarkup,
+        ...threadExtra,
       }),
       signal: AbortSignal.timeout(10000),
     });
@@ -220,7 +223,7 @@ async function sendListingNotification(
       const retry = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: false, reply_markup: replyMarkup }),
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: false, reply_markup: replyMarkup, ...threadExtra }),
         signal: AbortSignal.timeout(10000),
       });
       if (retry.ok) {
@@ -244,12 +247,12 @@ export async function sendListingsBatch(
   botToken: string,
   chatId: string,
   listingsList: Listing[],
-  delayMs = 2000
+  delayMs = 2000,
+  threadId?: number | null
 ): Promise<number> {
   let sentCount = 0;
-
   for (const listing of listingsList) {
-    const messageId = await sendListingNotification(botToken, chatId, listing);
+    const messageId = await sendListingNotification(botToken, chatId, listing, threadId);;
     if (messageId !== null) {
       sentCount++;
       // Mark as sent in DB and save telegram message_id
@@ -300,7 +303,7 @@ export async function sendPendingListings(): Promise<number> {
   if (unsentListings.length === 0) return 0;
 
   console.log(`[Telegram] Sending ${unsentListings.length} pending listings...`);
-  return sendListingsBatch(config.botToken, config.chatId, unsentListings);
+  return sendListingsBatch(config.botToken, config.chatId, unsentListings, 2000, config.threadNew);
 }
 
 /**
@@ -463,13 +466,24 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
       const newStatus = match[1] as "new" | "viewed" | "interesting";
       const listingId = parseInt(match[2], 10);
 
-      await updateListingStatus(listingId, newStatus);
-
+       await updateListingStatus(listingId, newStatus);
       const statusText = newStatus === "viewed" ? "Просмотрено" : newStatus === "interesting" ? "Добавлено в Интересные" : "Статус сброшен";
       await answerCallbackQuery(config.botToken, callbackId, `✅ ${statusText}`);
-
       if (callbackMessageId && newStatus !== "new") {
         await updateMessageKeyboard(config.botToken, callbackChatId, callbackMessageId, newStatus, listingId);
+      }
+      // Forward to topic thread if configured
+      if (newStatus === "interesting" && config.threadInteresting) {
+        const db2 = await getDb();
+        const found = db2 ? await db2.select().from(listings).where(eq(listings.id, listingId)).limit(1) : [];
+        if (found[0]) await sendListingNotification(config.botToken, config.chatId!, found[0] as Listing, config.threadInteresting);
+      } else if (newStatus === "viewed" && config.threadViewed) {
+        const db2 = await getDb();
+        const found = db2 ? await db2.select().from(listings).where(eq(listings.id, listingId)).limit(1) : [];
+        if (found[0]) {
+          const viewedMsg = `👁 <b>Просмотрено</b>\n\n${formatListingMessage(found[0] as Listing)}`;
+          await sendTelegramMessage(config.botToken, config.chatId!, viewedMsg, { message_thread_id: config.threadViewed });
+        }
       }
     } else {
       await answerCallbackQuery(config.botToken, callbackId);
@@ -492,6 +506,23 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
 
   const botToken = config.botToken;
 
+  if (text.startsWith("/getids")) {
+    const threadId = (message.message_thread_id as number | undefined) ?? null;
+    const replyLines = [
+      `🔍 <b>ID для настройки топиков</b>`,
+      ``,
+      `<b>Chat ID:</b> <code>${chatId}</code>`,
+      threadId
+        ? `<b>Thread ID этого топика:</b> <code>${threadId}</code>`
+        : `<b>Thread ID:</b> не определён — напишите /getids <b>внутри нужного топика</b>`,
+      ``,
+      `ℹ️ Запишите Thread ID каждого топика в настройках приложения (вкладка Telegram).`,
+    ];
+    await sendTelegramMessage(botToken, chatId, replyLines.join("\n"),
+      threadId ? { message_thread_id: threadId } : {}
+    );
+    return;
+  }
   if (text.startsWith("/start")) {
     await sendTelegramMessage(
       botToken,

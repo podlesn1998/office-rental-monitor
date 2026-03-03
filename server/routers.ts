@@ -120,6 +120,9 @@ export const appRouter = router({
           botToken: z.string().min(10).optional(),
           chatId: z.string().min(1).optional(),
           active: z.boolean().optional(),
+          threadNew: z.number().int().nullable().optional(),
+          threadInteresting: z.number().int().nullable().optional(),
+          threadViewed: z.number().int().nullable().optional(),
         })
       )
       .mutation(async ({ input }) => {

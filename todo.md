@@ -202,3 +202,11 @@
 ## Feature: Score Breakdown Popover
 - [x] Compute scoreBreakdown (details array) on frontend from listing data using same algorithm
 - [x] Show popover/tooltip on score badge click with breakdown lines (floor, entrance, ceiling)
+
+## Feature: Telegram Topics Support
+- [x] Add /getids command to bot (returns chat.id and message_thread_id)
+- [x] Add topic thread ID fields to telegramConfig schema (threadNew, threadInteresting, threadViewed)
+- [x] Add topic thread ID inputs to Settings UI (Telegram вкладка)
+- [x] Send new listings to "Новые" topic (threadNew) via sendPendingListings
+- [x] Send notification to "Интересные" topic when user marks listing as interesting
+- [x] Send notification to "Просмотренные" topic when user marks listing as viewed

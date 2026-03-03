@@ -256,6 +256,9 @@ export async function updateTelegramConfig(
     chatId: string;
     active: boolean;
     initialBulkSent: boolean;
+    threadNew: number | null;
+    threadInteresting: number | null;
+    threadViewed: number | null;
   }>
 ) {
   const db = await getDb();

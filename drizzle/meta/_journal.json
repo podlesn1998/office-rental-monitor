@@ -36,6 +36,13 @@
       "when": 1772433920759,
       "tag": "0004_empty_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1772539879368,
+      "tag": "0005_short_crystal",
+      "breakpoints": true
     }
   ]
 }

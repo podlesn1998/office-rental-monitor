@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `telegramConfig` ADD `threadNew` int;\nALTER TABLE `telegramConfig` ADD `threadInteresting` int;\nALTER TABLE `telegramConfig` ADD `threadViewed` int;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute ALTER TABLE `telegramConfig` ADD `threadNew` int;\nALTER TABLE `telegramConfig` ADD `threadInteresting` int;\nALTER TABLE `telegramConfig` ADD `threadViewed` int;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1214
+}

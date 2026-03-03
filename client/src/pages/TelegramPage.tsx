@@ -21,6 +21,9 @@ export default function TelegramPage() {
   const [botToken, setBotToken] = useState("");
   const [chatId, setChatId] = useState("");
   const [active, setActive] = useState(false);
+  const [threadNew, setThreadNew] = useState("");
+  const [threadInteresting, setThreadInteresting] = useState("");
+  const [threadViewed, setThreadViewed] = useState("");
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [silentSave, setSilentSave] = useState(false);
 
@@ -28,6 +31,9 @@ export default function TelegramPage() {
     if (config) {
       setChatId(config.chatId ?? "");
       setActive(config.active);
+      setThreadNew(config.threadNew != null ? String(config.threadNew) : "");
+      setThreadInteresting(config.threadInteresting != null ? String(config.threadInteresting) : "");
+      setThreadViewed(config.threadViewed != null ? String(config.threadViewed) : "");
     }
   }, [config]);
 
@@ -86,6 +92,9 @@ export default function TelegramPage() {
     const data: Record<string, unknown> = { active };
     if (botToken) data.botToken = botToken;
     if (chatId) data.chatId = chatId;
+    data.threadNew = threadNew ? parseInt(threadNew, 10) : null;
+    data.threadInteresting = threadInteresting ? parseInt(threadInteresting, 10) : null;
+    data.threadViewed = threadViewed ? parseInt(threadViewed, 10) : null;
     updateMutation.mutate(data as Parameters<typeof updateMutation.mutate>[0]);
   };
 
@@ -172,6 +181,47 @@ export default function TelegramPage() {
           <p className="text-xs text-muted-foreground mt-1.5">
             Узнайте ваш ID через @userinfobot или @getidsbot в Telegram
           </p>
+        </div>
+
+        {/* Topics (Forum threads) */}
+        <div className="bg-card rounded-2xl p-4 border border-border">
+          <div className="flex items-center gap-2 mb-1">
+            <MessageSquare size={16} className="text-primary" />
+            <span className="font-medium text-foreground">Telegram Topics (топики)</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Если бот добавлен в группу с включёнными темами, укажите Thread ID каждого топика.
+            Напишите <code className="bg-background px-1 rounded">/getids</code> внутри нужного топика, чтобы узнать его ID.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">🆕 Топик «Новые объявления» (Thread ID)</Label>
+              <Input
+                placeholder="Например: 2"
+                value={threadNew}
+                onChange={(e) => setThreadNew(e.target.value)}
+                className="bg-background border-border"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">⭐ Топик «Интересные» (Thread ID)</Label>
+              <Input
+                placeholder="Например: 4"
+                value={threadInteresting}
+                onChange={(e) => setThreadInteresting(e.target.value)}
+                className="bg-background border-border"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">✅ Топик «Просмотренные» (Thread ID)</Label>
+              <Input
+                placeholder="Например: 6"
+                value={threadViewed}
+                onChange={(e) => setThreadViewed(e.target.value)}
+                className="bg-background border-border"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Active toggle */}

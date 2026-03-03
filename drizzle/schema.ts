@@ -93,6 +93,10 @@ export const telegramConfig = mysqlTable("telegramConfig", {
   chatId: varchar("chatId", { length: 64 }),
   active: boolean("active").default(false).notNull(),
   initialBulkSent: boolean("initialBulkSent").default(false).notNull(),
+  // Telegram Topics (Forum) thread IDs
+  threadNew: int("threadNew"),        // Topic for new listings
+  threadInteresting: int("threadInteresting"), // Topic for interesting listings
+  threadViewed: int("threadViewed"),  // Topic for viewed listings
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
