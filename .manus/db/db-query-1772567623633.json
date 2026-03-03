@@ -1,0 +1,25 @@
+{
+  "query": "SELECT isNew, isSent, COUNT(*) as cnt FROM listings GROUP BY isNew, isSent ORDER BY isNew DESC, isSent ASC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT isNew, isSent, COUNT(*) as cnt FROM listings GROUP BY isNew, isSent ORDER BY isNew DESC, isSent ASC;",
+  "rows": [
+    {
+      "isNew": "1",
+      "isSent": "0",
+      "cnt": "25"
+    },
+    {
+      "isNew": "0",
+      "isSent": "0",
+      "cnt": "18"
+    },
+    {
+      "isNew": "0",
+      "isSent": "1",
+      "cnt": "10"
+    }
+  ],
+  "messages": [],
+  "stdout": "isNew\tisSent\tcnt\n1\t0\t25\n0\t0\t18\n0\t1\t10\n",
+  "stderr": "",
+  "execution_time_ms": 370
+}

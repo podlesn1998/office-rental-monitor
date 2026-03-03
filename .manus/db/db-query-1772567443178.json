@@ -1,0 +1,29 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(CASE WHEN isSent=0 THEN 1 ELSE 0 END) as unsent FROM listings; SELECT id, chatId, active, threadNew, threadInteresting, threadNotInteresting FROM telegramConfig LIMIT 1; SELECT id, platform, title, isSent, status, createdAt FROM listings ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(CASE WHEN isSent=0 THEN 1 ELSE 0 END) as unsent FROM listings; SELECT id, chatId, active, threadNew, threadInteresting, threadNotInteresting FROM telegramConfig LIMIT 1; SELECT id, platform, title, isSent, status, createdAt FROM listings ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "total": "53",
+      "sent": "10",
+      "unsent": "43"
+    }
+  ],
+  "messages": [
+    "id\tchatId\tactive\tthreadNew\tthreadInteresting\tthreadNotInteresting",
+    "1\t-1003767429212\t1\t148\t150\t152",
+    "id\tplatform\ttitle\tisSent\tstatus\tcreatedAt",
+    "120044\tyandex\t56,2 м² · офис · 3 этаж из 3B\t0\tnew\t2026-03-03 14:52:34",
+    "120042\tyandex\t46,5 м² · офис · 4 этаж из 4\t0\tnew\t2026-03-03 14:52:34",
+    "120038\tyandex\t53,6 м² · офис · 3 этаж из 3\t0\tnew\t2026-03-03 14:52:34",
+    "120040\tyandex\t53,9 м² · офис · 2 этаж из 3\t0\tnew\t2026-03-03 14:52:34",
+    "120043\tyandex\t59,6 м² · офис · 2 этаж из 2C\t0\tnew\t2026-03-03 14:52:34",
+    "120037\tyandex\t56,7 м² · офис · 4 этаж из 6\t0\tnew\t2026-03-03 14:52:34",
+    "120039\tyandex\t46,7 м² · офис · 4 этаж из 4\t0\tnew\t2026-03-03 14:52:34",
+    "120041\tyandex\t47,2 м² · офис · 4 этаж из 4\t0\tnew\t2026-03-03 14:52:34",
+    "120036\tyandex\t56,9 м² · офис · 2 этаж из 6\t0\tnew\t2026-03-03 14:52:33",
+    "120035\tyandex\t57,7 м² · офис · 5 этаж из 6\t0\tnew\t2026-03-03 14:52:33"
+  ],
+  "stdout": "total\tsent\tunsent\n53\t10\t43\nid\tchatId\tactive\tthreadNew\tthreadInteresting\tthreadNotInteresting\n1\t-1003767429212\t1\t148\t150\t152\nid\tplatform\ttitle\tisSent\tstatus\tcreatedAt\n120044\tyandex\t56,2 м² · офис · 3 этаж из 3B\t0\tnew\t2026-03-03 14:52:34\n120042\tyandex\t46,5 м² · офис · 4 этаж из 4\t0\tnew\t2026-03-03 14:52:34\n120038\tyandex\t53,6 м² · офис · 3 этаж из 3\t0\tnew\t2026-03-03 14:52:34\n120040\tyandex\t53,9 м² · офис · 2 этаж из 3\t0\tnew\t2026-03-03 14:52:34\n120043\tyandex\t59,6 м² · офис · 2 этаж из 2C\t0\tnew\t2026-03-03 14:52:34\n120037\tyandex\t56,7 м² · офис · 4 этаж из 6\t0\tnew\t2026-03-03 14:52:34\n120039\tyandex\t46,7 м² · офис · 4 этаж из 4\t0\tnew\t2026-03-03 14:52:34\n120041\tyandex\t47,2 м² · офис · 4 этаж из 4\t0\tnew\t2026-03-03 14:52:34\n120036\tyandex\t56,9 м² · офис · 2 этаж из 6\t0\tnew\t2026-03-03 14:52:33\n120035\tyandex\t57,7 м² · офис · 5 этаж из 6\t0\tnew\t2026-03-03 14:52:33\n",
+  "stderr": "",
+  "execution_time_ms": 454
+}

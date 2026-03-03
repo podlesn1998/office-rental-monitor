@@ -152,6 +152,10 @@ async function sendListingNotification(
   const replyMarkup = buildListingKeyboard(listing.id);
   const threadExtra = threadId ? { message_thread_id: threadId } : {};
 
+  // Helper: check if error is "thread not found" and retry without threadId
+  const isThreadNotFound = (status: number, body: string) =>
+    status === 400 && body.includes("message thread not found");
+
   if (photos.length > 0) {
     try {
       // Send photo with caption
@@ -193,51 +197,73 @@ async function sendListingNotification(
           // Fall through
         }
       }
-      // Fall through to text message if photo fails
-    } catch {
-      // Fall through
+      // Log photo failure and fall through to text message
+      const errBody = await response.text().catch(() => "(unreadable)");
+      console.warn(`[Telegram] sendPhoto failed (${response.status}): ${errBody} — falling back to text`);
+    } catch (photoErr) {
+      console.warn(`[Telegram] sendPhoto exception: ${photoErr} — falling back to text`);
     }
   }
 
-  // Text message fallback
-  try {
-    const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: false,
-        reply_markup: replyMarkup,
-        ...threadExtra,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (response.status === 429) {
-      const body = await response.json() as { parameters?: { retry_after?: number } };
-      const retryAfter = (body.parameters?.retry_after ?? 30) + 2;
-      await new Promise((r) => setTimeout(r, retryAfter * 1000));
-      const retry = await fetch(url, {
+  // Text message (with optional thread)
+  const sendText = async (extra: Record<string, unknown> = {}): Promise<number | null> => {
+    try {
+      const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: false, reply_markup: replyMarkup, ...threadExtra }),
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: "HTML",
+          disable_web_page_preview: false,
+          reply_markup: replyMarkup,
+          ...extra,
+        }),
         signal: AbortSignal.timeout(10000),
       });
-      if (retry.ok) {
-        const data = await retry.json() as { result?: { message_id?: number } };
-        return data.result?.message_id ?? null;
+
+      if (response.status === 429) {
+        const body = await response.json() as { parameters?: { retry_after?: number } };
+        const retryAfter = (body.parameters?.retry_after ?? 30) + 2;
+        await new Promise((r) => setTimeout(r, retryAfter * 1000));
+        const retry = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: false, reply_markup: replyMarkup, ...extra }),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (retry.ok) {
+          const data = await retry.json() as { result?: { message_id?: number } };
+          return data.result?.message_id ?? null;
+        }
+        return null;
       }
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => "(unreadable)");
+        if (isThreadNotFound(response.status, errBody)) {
+          console.warn(`[Telegram] Thread not found (id=${threadId}), retrying without thread...`);
+          return null; // signal caller to retry without thread
+        }
+        console.error(`[Telegram] sendMessage failed (${response.status}): ${errBody}`);
+        return null;
+      }
+      const data = await response.json() as { result?: { message_id?: number } };
+      return data.result?.message_id ?? null;
+    } catch (err) {
+      console.error(`[Telegram] sendMessage exception:`, err);
       return null;
     }
-    if (!response.ok) return null;
-    const data = await response.json() as { result?: { message_id?: number } };
-    return data.result?.message_id ?? null;
-  } catch {
-    return null;
+  };
+
+  // Try with thread first, fall back to no thread on 400
+  if (threadId) {
+    const result = await sendText(threadExtra);
+    if (result !== null) return result;
+    // If thread failed, retry without thread
+    return sendText();
   }
+  return sendText();
 }
 
 /**
@@ -340,7 +366,7 @@ export async function sendAllListingsForced(): Promise<number> {
   }
 
   console.log(`[Telegram] Force-sending ${unsentListings.length} listings...`);
-  return sendListingsBatch(config.botToken, config.chatId, unsentListings, 1200);
+  return sendListingsBatch(config.botToken, config.chatId, unsentListings, 1200, config.threadNew);
 }
 
 /**

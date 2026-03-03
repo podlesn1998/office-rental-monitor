@@ -1,0 +1,37 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(CASE WHEN isSent=0 THEN 1 ELSE 0 END) as unsent FROM listings; SELECT id, chatId, active FROM telegramConfig LIMIT 1; SHOW COLUMNS FROM telegramConfig;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(CASE WHEN isSent=0 THEN 1 ELSE 0 END) as unsent FROM listings; SELECT id, chatId, active FROM telegramConfig LIMIT 1; SHOW COLUMNS FROM telegramConfig;",
+  "rows": [
+    {
+      "total": "53",
+      "sent": "10",
+      "unsent": "43"
+    },
+    {
+      "total": "id",
+      "sent": "chatId",
+      "unsent": "active"
+    },
+    {
+      "total": "1",
+      "sent": "-1003767429212",
+      "unsent": "1"
+    }
+  ],
+  "messages": [
+    "Field\tType\tNull\tKey\tDefault\tExtra",
+    "id\tint\tNO\tPRI\tNULL\tauto_increment",
+    "botToken\tvarchar(256)\tYES\t\tNULL\t",
+    "chatId\tvarchar(64)\tYES\t\tNULL\t",
+    "active\ttinyint(1)\tNO\t\t0\t",
+    "initialBulkSent\ttinyint(1)\tNO\t\t0\t",
+    "createdAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t",
+    "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+    "threadNew\tint\tYES\t\tNULL\t",
+    "threadInteresting\tint\tYES\t\tNULL\t",
+    "threadNotInteresting\tint\tYES\t\tNULL\t"
+  ],
+  "stdout": "total\tsent\tunsent\n53\t10\t43\nid\tchatId\tactive\n1\t-1003767429212\t1\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nbotToken\tvarchar(256)\tYES\t\tNULL\t\nchatId\tvarchar(64)\tYES\t\tNULL\t\nactive\ttinyint(1)\tNO\t\t0\t\ninitialBulkSent\ttinyint(1)\tNO\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nthreadNew\tint\tYES\t\tNULL\t\nthreadInteresting\tint\tYES\t\tNULL\t\nthreadNotInteresting\tint\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 458
+}

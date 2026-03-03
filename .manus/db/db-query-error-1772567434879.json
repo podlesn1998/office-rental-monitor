@@ -1,0 +1,10 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(CASE WHEN isSent=0 THEN 1 ELSE 0 END) as unsent FROM listings; SELECT id, chatId, active, threadNew, threadInteresting, threadViewed FROM telegramConfig LIMIT 1; SELECT id, platform, title, isSent, status, createdAt FROM listings ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(CASE WHEN isSent=0 THEN 1 ELSE 0 END) as unsent FROM listings; SELECT id, chatId, active, threadNew, threadInteresting, threadViewed FROM telegramConfig LIMIT 1; SELECT id, platform, title, isSent, status, createdAt FROM listings ORDER BY createdAt DESC LIMIT 10;",
+  "returncode": 1,
+  "logs": [
+    "total\tsent\tunsent",
+    "53\t10\t43",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'threadviewed' in 'field list'"
+  ]
+}

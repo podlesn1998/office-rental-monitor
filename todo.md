@@ -248,3 +248,11 @@
 - [x] Show progress indicator during auto-scrape (reuse existing progress polling)
 - [x] Navigate to Home tab after scrape completes so user sees updated results
 - [x] Remove stale text "Изменения вступят в силу при следующем запуске мониторинга"
+
+## Bug: Telegram Notifications Not Sending (FIXED)
+- [x] Diagnose root cause: threadNew=148 in DB was invalid (topic deleted) → Telegram returned 400 "message thread not found" for every message
+- [x] Cleared invalid thread IDs (threadNew/threadInteresting/threadNotInteresting) in DB
+- [x] Added graceful fallback in sendListingNotification: if threadId causes 400, retry without thread
+- [x] Added error logging to sendListingNotification (was silently swallowing all errors)
+- [x] Fixed sendAllListingsForced to pass threadNew to sendListingsBatch
+- [x] Verified: Sent 11 Telegram notifications successfully after fix
