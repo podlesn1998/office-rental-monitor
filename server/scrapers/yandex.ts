@@ -27,13 +27,13 @@ function buildYandexUrl(params: SearchParams, page = 1): string {
 async function parseYandexPage(page: import("playwright-core").Page): Promise<Array<{
   id: string; href: string; price: number | null; area: number | null;
   metro: string; metroMin: number | null; address: string; title: string;
-  ceilingHeight: number | null;
+  ceilingHeight: number | null; floor: number | null; totalFloors: number | null;
 }>> {
   return page.evaluate(() => {
     const cardResults: Array<{
       id: string; href: string; price: number | null; area: number | null;
       metro: string; metroMin: number | null; address: string; title: string;
-      ceilingHeight: number | null;
+      ceilingHeight: number | null; floor: number | null; totalFloors: number | null;
     }> = [];
 
     const links = Array.from(document.querySelectorAll('a[href*="/offer/"]'));
@@ -124,7 +124,29 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
         if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
       }
 
-      cardResults.push({ id, href, price, area, metro, metroMin, address, title: titleText, ceilingHeight });
+      // Extract floor: patterns like "1/5 эт.", "этаж 2 из 9", "2 этаж", "1-й этаж"
+      let floor: number | null = null;
+      let totalFloors: number | null = null;
+      // Pattern: "N/M эт." or "этаж N из M" or "N из M эт"
+      const floorSlashMatch = fullText.match(/(\d+)\s*\/\s*(\d+)\s*эт/i)
+        || fullText.match(/этаж\s+(\d+)\s+из\s+(\d+)/i)
+        || fullText.match(/(\d+)\s+из\s+(\d+)\s+эт/i);
+      if (floorSlashMatch) {
+        const f = parseInt(floorSlashMatch[1]);
+        const t = parseInt(floorSlashMatch[2]);
+        if (f >= 1 && f <= 100 && t >= f) { floor = f; totalFloors = t; }
+      }
+      // Pattern: "2 этаж" or "2-й этаж" or "этаж 2" (without total)
+      if (floor === null) {
+        const floorSingleMatch = fullText.match(/(\d+)[-й]?\s*этаж/i)
+          || fullText.match(/этаж\s*(\d+)/i);
+        if (floorSingleMatch) {
+          const f = parseInt(floorSingleMatch[1]);
+          if (f >= 1 && f <= 100) floor = f;
+        }
+      }
+
+      cardResults.push({ id, href, price, area, metro, metroMin, address, title: titleText, ceilingHeight, floor, totalFloors });
     }
 
     return cardResults;
@@ -195,8 +217,8 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
           metroDistanceType: params.transportType,
           price: card.price,
           area: card.area ? Math.round(card.area) : null,
-          floor: null,
-          totalFloors: null,
+          floor: card.floor ?? null,
+          totalFloors: card.totalFloors ?? null,
           ceilingHeight: card.ceilingHeight ?? null,
           description: null,
           photos: [],

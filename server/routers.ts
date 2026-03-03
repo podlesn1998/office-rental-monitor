@@ -16,6 +16,7 @@ import {
   updateListingStatus,
 } from "./db";
 import { runAllScrapers, runPlatformScrape } from "./scrapers/index";
+import { computeScore } from "./utils/scoreListing";
 import { scrapeProgress } from "./scrapeProgress";
 import { sendPendingListings, sendAllListingsForced, testTelegramConnection } from "./telegram";
 import { registerTelegramWebhook } from "./scheduler";
@@ -186,6 +187,31 @@ export const appRouter = router({
         await deleteListing(input.id);
         return { success: true };
       }),
+  }),
+
+  // ---- Rescore ----
+  listings_rescore: router({
+    all: publicProcedure.mutation(async () => {
+      const db = await (await import("./db")).getDb();
+      if (!db) return { updated: 0 };
+      const { listings: listingsTable } = await import("../drizzle/schema");
+      const all = await db.select().from(listingsTable);
+      let updated = 0;
+      for (const row of all) {
+        const score = computeScore({
+          floor: row.floor,
+          totalFloors: row.totalFloors,
+          ceilingHeight: row.ceilingHeight as number | null | undefined,
+          title: row.title,
+          description: row.description,
+        });
+        if (score !== row.score) {
+          await db.update(listingsTable).set({ score }).where((await import("drizzle-orm")).eq(listingsTable.id, row.id));
+          updated++;
+        }
+      }
+      return { updated, total: all.length };
+    }),
   }),
 
   // ---- Scraper ----

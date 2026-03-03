@@ -256,3 +256,9 @@
 - [x] Added error logging to sendListingNotification (was silently swallowing all errors)
 - [x] Fixed sendAllListingsForced to pass threadNew to sendListingsBatch
 - [x] Verified: Sent 11 Telegram notifications successfully after fix
+
+## Feature: Floor Parsing in Scrapers
+- [x] Parse floor and totalFloors in CIAN scraper
+- [x] Parse floor and totalFloors in Yandex scraper
+- [x] Add rescore procedure (listings_rescore.all) and button in Settings
+- [x] Verify minFloor/maxFloor filter works end-to-end

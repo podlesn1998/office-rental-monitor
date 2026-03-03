@@ -188,6 +188,14 @@ export default function Settings() {
     },
   });
 
+  const rescoreMutation = trpc.listings_rescore.all.useMutation({
+    onSuccess: (res) => {
+      utils.listings.list.invalidate();
+      toast.success(`Score пересчитан для ${res.total} объявлений (обновлено ${res.updated})`);
+    },
+    onError: () => toast.error("Ошибка пересчёта score"),
+  });
+
   const updateMutation = trpc.searchConfig.update.useMutation({
     onSuccess: () => {
       refetch();
@@ -819,6 +827,21 @@ export default function Settings() {
             : (triggerMutation.isPending || isScraping)
             ? "Запускаю поиск..."
             : "Сохранить и обновить выдачу"}
+        </Button>
+
+        {/* Rescore button */}
+        <Button
+          onClick={() => rescoreMutation.mutate()}
+          disabled={rescoreMutation.isPending}
+          variant="outline"
+          className="w-full h-10 gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          {rescoreMutation.isPending ? (
+            <RefreshCw size={14} className="animate-spin" />
+          ) : (
+            <RefreshCw size={14} />
+          )}
+          {rescoreMutation.isPending ? "Пересчёт..." : "Пересчитать score по текущим данным"}
         </Button>
 
         {(triggerMutation.isPending || isScraping) && progress && (
