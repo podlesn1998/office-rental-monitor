@@ -217,3 +217,11 @@
 - [x] In callback handler: when status=viewed and threadViewed configured, delete original message and re-send to threadViewed
 - [x] Skip updateMessageKeyboard when moving (message is deleted, no need to edit keyboard)
 - [x] If deletion fails (no permission), fall back to just sending to target topic without deleting (deleteMessage returns bool, error is swallowed)
+
+## Feature: Rename "Просмотренные" → "Неинтересные"
+- [x] Update DB enum: viewed → not_interesting (migrated with 3-step ALTER TABLE)
+- [x] Update UI tabs: "Просмотренные" → "Неинтересные", button "Отметить" → "Неинтересно"
+- [x] Update Telegram button text: "✅ Просмотрено" → "👎 Неинтересно"
+- [x] Update Telegram callback statusText: "Просмотрено" → "Отмечено как неинтересное"
+- [x] Update Telegram topic label in Settings UI: "Просмотренные" → "Неинтересные"
+- [x] Update threadViewed → threadNotInteresting in schema, DB, routers, db.ts, telegram.ts, TelegramPage.tsx

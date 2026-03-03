@@ -129,7 +129,7 @@ function buildListingKeyboard(listingId: number) {
   return {
     inline_keyboard: [
       [
-        { text: "✅ Просмотрено", callback_data: `status:viewed:${listingId}` },
+        { text: "👎 Неинтересно", callback_data: `status:not_interesting:${listingId}` },
         { text: "⭐ Интересно", callback_data: `status:interesting:${listingId}` },
       ],
     ],
@@ -433,25 +433,23 @@ async function updateMessageKeyboard(
   botToken: string,
   chatId: string,
   messageId: number,
-  status: "viewed" | "interesting",
-  listingId: number
+  status: "not_interesting" | "interesting",
+  listingId: number,
 ): Promise<void> {
-  const statusLabel = status === "viewed" ? "✅ Просмотрено" : "⭐ Интересно";
   const newKeyboard = {
     inline_keyboard: [
       [
         {
-          text: status === "viewed" ? "✅ Просмотрено" : "✅ Отметить просмотренным",
-          callback_data: status === "viewed" ? `status:new:${listingId}` : `status:viewed:${listingId}`,
+          text: status === "not_interesting" ? "👎 Неинтересно (сбросить)" : "👎 Неинтересно",
+          callback_data: status === "not_interesting" ? `status:new:${listingId}` : `status:not_interesting:${listingId}`,
         },
         {
-          text: status === "interesting" ? "⭐ Интересно" : "⭐ Интересно",
+          text: status === "interesting" ? "⭐ Интересно (сбросить)" : "⭐ Интересно",
           callback_data: status === "interesting" ? `status:new:${listingId}` : `status:interesting:${listingId}`,
         },
       ],
     ],
   };
-  void statusLabel; // used in answer text
   await fetch(`${TELEGRAM_API}/bot${botToken}/editMessageReplyMarkup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -479,16 +477,16 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
     if (!config?.botToken) return;
 
     // Parse: status:viewed:123 or status:interesting:123 or status:new:123
-    const match = data.match(/^status:(new|viewed|interesting):(\d+)$/);
+    const match = data.match(/^status:(new|not_interesting|interesting):(\d+)$/);
     if (match) {
-      const newStatus = match[1] as "new" | "viewed" | "interesting";
+      const newStatus = match[1] as "new" | "not_interesting" | "interesting";
       const listingId = parseInt(match[2], 10);
 
        await updateListingStatus(listingId, newStatus);
-      const statusText = newStatus === "viewed" ? "Просмотрено" : newStatus === "interesting" ? "Добавлено в Интересные" : "Статус сброшен";
+      const statusText = newStatus === "not_interesting" ? "Отмечено как неинтересное" : newStatus === "interesting" ? "Добавлено в Интересные" : "Статус сброшен";
       await answerCallbackQuery(config.botToken, callbackId, `✅ ${statusText}`);
       // Move message to target topic thread if configured
-      const targetThread = newStatus === "interesting" ? config.threadInteresting : newStatus === "viewed" ? config.threadViewed : null;
+      const targetThread = newStatus === "interesting" ? config.threadInteresting : newStatus === "not_interesting" ? config.threadNotInteresting : null;
       // Only update keyboard if NOT moving to another topic (message will be deleted)
       if (callbackMessageId && newStatus !== "new" && !targetThread) {
         await updateMessageKeyboard(config.botToken, callbackChatId, callbackMessageId, newStatus, listingId);
@@ -504,9 +502,9 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
           // Re-send to target topic
           if (newStatus === "interesting") {
             await sendListingNotification(config.botToken, config.chatId, found[0] as Listing, targetThread);
-          } else if (newStatus === "viewed") {
-            const viewedMsg = `👁 <b>Просмотрено</b>\n\n${formatListingMessage(found[0] as Listing)}`;
-            await sendTelegramMessage(config.botToken, config.chatId, viewedMsg, { message_thread_id: targetThread });
+          } else if (newStatus === "not_interesting") {
+            const notInterestingMsg = `👎 <b>Неинтересно</b>\n\n${formatListingMessage(found[0] as Listing)}`;
+            await sendTelegramMessage(config.botToken, config.chatId, notInterestingMsg, { message_thread_id: targetThread });
           }
         }
       }

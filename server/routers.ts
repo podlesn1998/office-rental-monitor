@@ -39,7 +39,7 @@ export const appRouter = router({
         z.object({
           platform: z.enum(["cian", "avito", "yandex"]).optional(),
           isNew: z.boolean().optional(),
-          status: z.enum(["new", "viewed", "interesting"]).optional(),
+          status: z.enum(["new", "not_interesting", "interesting"]).optional(),
           limit: z.number().min(1).max(100).default(20),
           offset: z.number().min(0).default(0),
         })
@@ -56,7 +56,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
-          status: z.enum(["new", "viewed", "interesting"]),
+          status: z.enum(["new", "not_interesting", "interesting"]),
         })
       )
       .mutation(async ({ input }) => {
@@ -122,7 +122,7 @@ export const appRouter = router({
           active: z.boolean().optional(),
           threadNew: z.number().int().nullable().optional(),
           threadInteresting: z.number().int().nullable().optional(),
-          threadViewed: z.number().int().nullable().optional(),
+          threadNotInteresting: z.number().int().nullable().optional(),
         })
       )
       .mutation(async ({ input }) => {

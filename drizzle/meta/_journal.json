@@ -43,6 +43,13 @@
       "when": 1772539879368,
       "tag": "0005_short_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1772541639479,
+      "tag": "0006_worried_living_mummy",
+      "breakpoints": true
     }
   ]
 }

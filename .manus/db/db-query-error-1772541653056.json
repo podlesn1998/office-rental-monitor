@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE `telegramConfig` RENAME COLUMN `threadViewed` TO `threadNotInteresting`;\nALTER TABLE `listings` MODIFY COLUMN `status` enum('new','not_interesting','interesting') NOT NULL DEFAULT 'new';\nUPDATE `listings` SET `status` = 'not_interesting' WHERE `status` = 'viewed';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute ALTER TABLE `telegramConfig` RENAME COLUMN `threadViewed` TO `threadNotInteresting`;\nALTER TABLE `listings` MODIFY COLUMN `status` enum('new','not_interesting','interesting') NOT NULL DEFAULT 'new';\nUPDATE `listings` SET `status` = 'not_interesting' WHERE `status` = 'viewed';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1265 (01000) at line 2: Data truncated for column 'status', value is 'viewed'"
+  ]
+}

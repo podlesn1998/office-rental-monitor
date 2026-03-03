@@ -1,0 +1,2 @@
+ALTER TABLE `telegramConfig` RENAME COLUMN `threadViewed` TO `threadNotInteresting`;--> statement-breakpoint
+ALTER TABLE `listings` MODIFY COLUMN `status` enum('new','not_interesting','interesting') NOT NULL DEFAULT 'new';

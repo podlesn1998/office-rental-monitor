@@ -23,7 +23,7 @@ export default function TelegramPage() {
   const [active, setActive] = useState(false);
   const [threadNew, setThreadNew] = useState("");
   const [threadInteresting, setThreadInteresting] = useState("");
-  const [threadViewed, setThreadViewed] = useState("");
+  const [threadNotInteresting, setThreadNotInteresting] = useState("");
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [silentSave, setSilentSave] = useState(false);
 
@@ -33,7 +33,7 @@ export default function TelegramPage() {
       setActive(config.active);
       setThreadNew(config.threadNew != null ? String(config.threadNew) : "");
       setThreadInteresting(config.threadInteresting != null ? String(config.threadInteresting) : "");
-      setThreadViewed(config.threadViewed != null ? String(config.threadViewed) : "");
+      setThreadNotInteresting(config.threadNotInteresting != null ? String(config.threadNotInteresting) : "");
     }
   }, [config]);
 
@@ -94,7 +94,7 @@ export default function TelegramPage() {
     if (chatId) data.chatId = chatId;
     data.threadNew = threadNew ? parseInt(threadNew, 10) : null;
     data.threadInteresting = threadInteresting ? parseInt(threadInteresting, 10) : null;
-    data.threadViewed = threadViewed ? parseInt(threadViewed, 10) : null;
+    data.threadNotInteresting = threadNotInteresting ? parseInt(threadNotInteresting, 10) : null;
     updateMutation.mutate(data as Parameters<typeof updateMutation.mutate>[0]);
   };
 
@@ -213,11 +213,11 @@ export default function TelegramPage() {
               />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">✅ Топик «Просмотренные» (Thread ID)</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">👎 Топик «Неинтересные» (Thread ID)</Label>
               <Input
                 placeholder="Например: 6"
-                value={threadViewed}
-                onChange={(e) => setThreadViewed(e.target.value)}
+                value={threadNotInteresting}
+                onChange={(e) => setThreadNotInteresting(e.target.value)}
                 className="bg-background border-border"
               />
             </div>

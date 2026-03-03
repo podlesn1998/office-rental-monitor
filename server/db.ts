@@ -70,7 +70,7 @@ export async function getUserByOpenId(openId: string) {
 
 // ---- Listings helpers ----
 
-export async function updateListingStatus(id: number, status: "new" | "viewed" | "interesting") {
+export async function updateListingStatus(id: number, status: "new" | "not_interesting" | "interesting") {
   const db = await getDb();
   if (!db) return;
   await db.update(listings).set({ status }).where(eq(listings.id, id));
@@ -80,7 +80,7 @@ export async function getListings(opts: {
   platform?: "cian" | "avito" | "yandex";
   isNew?: boolean;
   isSent?: boolean;
-  status?: "new" | "viewed" | "interesting";
+  status?: "new" | "not_interesting" | "interesting";
   limit?: number;
   offset?: number;
 }) {
@@ -258,7 +258,7 @@ export async function updateTelegramConfig(
     initialBulkSent: boolean;
     threadNew: number | null;
     threadInteresting: number | null;
-    threadViewed: number | null;
+    threadNotInteresting: number | null;
   }>
 ) {
   const db = await getDb();

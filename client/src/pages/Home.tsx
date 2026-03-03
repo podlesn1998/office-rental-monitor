@@ -34,7 +34,7 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   yandex: "badge-yandex",
 };
 
-type ListingStatus = "new" | "viewed" | "interesting";
+type ListingStatus = "new" | "not_interesting" | "interesting";
 
 interface ListingItem {
   id: number;
@@ -301,15 +301,15 @@ function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStat
         {/* Status action buttons */}
         <div className="flex gap-2">
           <button
-            onClick={() => onStatusChange(listing.id, status === "viewed" ? "new" : "viewed")}
+            onClick={() => onStatusChange(listing.id, status === "not_interesting" ? "new" : "not_interesting")}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-colors border ${
-              status === "viewed"
+              status === "not_interesting"
                 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                 : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted"
             }`}
           >
             <Eye size={12} />
-            {status === "viewed" ? "Просмотрено" : "Отметить"}
+            {status === "not_interesting" ? "Неинтересно" : "Неинтересно"}
           </button>
           <button
             onClick={() => onStatusChange(listing.id, status === "interesting" ? "new" : "interesting")}
@@ -521,14 +521,14 @@ export default function Home() {
             <Star size={11} /> Интересные
           </button>
           <button
-            onClick={() => { setStatusFilter("viewed"); setOffset(0); }}
+            onClick={() => { setStatusFilter("not_interesting"); setOffset(0); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
-              statusFilter === "viewed"
+              statusFilter === "not_interesting"
                 ? "bg-emerald-600 text-white border-emerald-600"
                 : "bg-card text-muted-foreground border-border hover:text-foreground"
             }`}
           >
-            <Eye size={11} /> Просмотренные
+            <Eye size={11} /> Неинтересные
           </button>
         </div>
 

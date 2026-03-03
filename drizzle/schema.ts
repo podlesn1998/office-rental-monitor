@@ -47,7 +47,7 @@ export const listings = mysqlTable("listings", {
   phone: varchar("phone", { length: 64 }),
   isNew: boolean("isNew").default(true).notNull(),
   isSent: boolean("isSent").default(false).notNull(),
-  status: mysqlEnum("status", ["new", "viewed", "interesting"]).default("new").notNull(),
+  status: mysqlEnum("status", ["new", "not_interesting", "interesting"]).default("new").notNull(),
   telegramMessageId: bigint("telegramMessageId", { mode: "number" }), // Telegram message ID for inline button updates
   score: int("score").default(0).notNull(), // quality score 0-100 based on ideal criteria
   firstSeen: timestamp("firstSeen").defaultNow().notNull(),
@@ -96,7 +96,7 @@ export const telegramConfig = mysqlTable("telegramConfig", {
   // Telegram Topics (Forum) thread IDs
   threadNew: int("threadNew"),        // Topic for new listings
   threadInteresting: int("threadInteresting"), // Topic for interesting listings
-  threadViewed: int("threadViewed"),  // Topic for viewed listings
+  threadNotInteresting: int("threadNotInteresting"),  // Topic for not-interesting listings
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
