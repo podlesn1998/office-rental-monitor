@@ -1,0 +1,70 @@
+{
+  "query": "SELECT address, district, platform, title FROM listings ORDER BY district, platform LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT address, district, platform, title FROM listings ORDER BY district, platform LIMIT 30;",
+  "rows": [
+    {
+      "address": "Апраксин переулок, 8",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "54,8 м² · офис · 2 этаж из 5B"
+    },
+    {
+      "address": "9-я Советская улица, 4-6",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "60 м² · офис · 3 этаж из 5C"
+    },
+    {
+      "address": "Казанская улица, 7",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "41,7 м² · офис · 4 этаж из 5B"
+    },
+    {
+      "address": "Захарьевская улица, 27",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "46 м² · офис · 1 этаж из 5"
+    },
+    {
+      "address": "Лиговский проспект, 10/118",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "43 м² · офис · 5 этаж из 6B"
+    },
+    {
+      "address": "Лиговский проспект, 10/118",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "46 м² · офис · 4 этаж из 6B"
+    },
+    {
+      "address": "2-я Советская улица, 27/2",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "40 м² · офис · 2 этаж из 2B"
+    },
+    {
+      "address": "Таврическая улица, 17",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "56,8 м² · офис · 4 этаж из 5"
+    },
+    {
+      "address": "Шпалерная улица, 51",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "45,6 м² · офис · 5 этаж из 5C"
+    },
+    {
+      "address": "9-я Советская улица, 4-6",
+      "district": "Центральный",
+      "platform": "yandex",
+      "title": "60 м² · офис · 3 этаж из 5C"
+    }
+  ],
+  "messages": [],
+  "stdout": "address\tdistrict\tplatform\ttitle\nАпраксин переулок, 8\tЦентральный\tyandex\t54,8 м² · офис · 2 этаж из 5B\n9-я Советская улица, 4-6\tЦентральный\tyandex\t60 м² · офис · 3 этаж из 5C\nКазанская улица, 7\tЦентральный\tyandex\t41,7 м² · офис · 4 этаж из 5B\nЗахарьевская улица, 27\tЦентральный\tyandex\t46 м² · офис · 1 этаж из 5\nЛиговский проспект, 10/118\tЦентральный\tyandex\t43 м² · офис · 5 этаж из 6B\nЛиговский проспект, 10/118\tЦентральный\tyandex\t46 м² · офис · 4 этаж из 6B\n2-я Советская улица, 27/2\tЦентральный\tyandex\t40 м² · офис · 2 этаж из 2B\nТаврическая улица, 17\tЦентральный\tyandex\t56,8 м² · офис · 4 этаж из 5\nШпалерная улица, 51\tЦентральный\tyandex\t45,6 м² · офис · 5 этаж из 5C\n9-я Советская улица, 4-6\tЦентральный\tyandex\t60 м² · офис · 3 этаж из 5C\n",
+  "stderr": "",
+  "execution_time_ms": 472
+}

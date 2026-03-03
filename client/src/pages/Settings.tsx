@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Settings2, MapPin, DollarSign, Maximize2, Train, Save, X, Plus,
-  Building2, Layers, Search, ChevronDown, ChevronUp, Tag, Map,
+  Building2, Layers, Search, ChevronDown, ChevronUp, Tag, Map, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -142,9 +143,58 @@ function RangeInput({
 }
 
 export default function Settings() {
+  const [, navigate] = useLocation();
+  const [isScraping, setIsScraping] = useState(false);
+  const utils = trpc.useUtils();
+
   const { data: config, refetch } = trpc.searchConfig.get.useQuery();
+
+  // Poll scrape progress while running after save
+  const { data: progress } = trpc.scraper.progress.useQuery(undefined, {
+    refetchInterval: (query) => {
+      const d = query.state.data;
+      return (d?.isRunning || isScraping) ? 1500 : false;
+    },
+    refetchIntervalInBackground: true,
+  });
+
+  // When scraping finishes (started by us), navigate to Home
+  const prevRunningRef = useRef<boolean>(false);
+  useEffect(() => {
+    const wasRunning = prevRunningRef.current;
+    const isRunning = progress?.isRunning ?? false;
+    if (wasRunning && !isRunning && isScraping) {
+      setIsScraping(false);
+      utils.listings.list.invalidate();
+      utils.listings.stats.invalidate();
+      toast.success("Поиск завершён — выдача обновлена");
+      navigate("/");
+    }
+    prevRunningRef.current = isRunning;
+  }, [progress?.isRunning]);
+
+  const triggerMutation = trpc.scraper.triggerAll.useMutation({
+    onSuccess: () => {
+      // scrape finished synchronously (rare), navigate immediately
+      setIsScraping(false);
+      utils.listings.list.invalidate();
+      utils.listings.stats.invalidate();
+      toast.success("Поиск завершён — выдача обновлена");
+      navigate("/");
+    },
+    onError: () => {
+      setIsScraping(false);
+      toast.error("Ошибка при запуске парсера");
+    },
+  });
+
   const updateMutation = trpc.searchConfig.update.useMutation({
-    onSuccess: () => { toast.success("Параметры сохранены"); refetch(); },
+    onSuccess: () => {
+      refetch();
+      toast.success("Параметры сохранены — запускаю поиск...");
+      setIsScraping(true);
+      triggerMutation.mutate();
+    },
     onError: (e) => toast.error("Ошибка сохранения: " + e.message),
   });
 
@@ -269,12 +319,12 @@ export default function Settings() {
           </div>
           <Button
             onClick={handleSave}
-            disabled={updateMutation.isPending}
+            disabled={updateMutation.isPending || triggerMutation.isPending || isScraping}
             size="sm"
             className="gap-1.5 h-8"
           >
-            <Save size={13} />
-            {updateMutation.isPending ? "..." : "Сохранить"}
+            <Save size={13} className={(triggerMutation.isPending || isScraping) ? "animate-spin" : ""} />
+            {updateMutation.isPending ? "Сохранение..." : (triggerMutation.isPending || isScraping) ? "Поиск..." : "Сохранить"}
           </Button>
         </div>
       </div>
@@ -760,16 +810,46 @@ export default function Settings() {
         {/* Save button */}
         <Button
           onClick={handleSave}
-          disabled={updateMutation.isPending}
+          disabled={updateMutation.isPending || triggerMutation.isPending || isScraping}
           className="w-full h-12 text-base font-medium gap-2"
         >
-          <Save size={16} />
-          {updateMutation.isPending ? "Сохранение..." : "Сохранить параметры"}
+          <Save size={16} className={(triggerMutation.isPending || isScraping) ? "animate-spin" : ""} />
+          {updateMutation.isPending
+            ? "Сохранение..."
+            : (triggerMutation.isPending || isScraping)
+            ? "Запускаю поиск..."
+            : "Сохранить и обновить выдачу"}
         </Button>
 
-        <p className="text-xs text-muted-foreground text-center pb-4">
-          Изменения вступят в силу при следующем запуске мониторинга
-        </p>
+        {(triggerMutation.isPending || isScraping) && progress && (
+          <div className="flex items-center justify-center gap-2 pb-2">
+            {(["cian", "yandex", "avito"] as const).map((p) => {
+              const ps = progress.platforms[p];
+              if (ps.status === "skipped") return null;
+              const label = p === "cian" ? "ЦИАН" : p === "yandex" ? "Яндекс" : "Авито";
+              return (
+                <span
+                  key={p}
+                  className={`text-[11px] font-medium px-2 py-0.5 rounded flex items-center gap-1 ${
+                    ps.status === "running"
+                      ? "bg-primary/20 text-primary animate-pulse"
+                      : ps.status === "done"
+                      ? "bg-green-500/20 text-green-400"
+                      : ps.status === "error"
+                      ? "bg-red-500/20 text-red-400"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {ps.status === "running" && <RefreshCw size={9} className="animate-spin" />}
+                  {ps.status === "done" && <span>✓</span>}
+                  {ps.status === "error" && <span>✗</span>}
+                  {label}
+                  {ps.status === "done" && ps.found > 0 && <span className="opacity-70"> {ps.found}</span>}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

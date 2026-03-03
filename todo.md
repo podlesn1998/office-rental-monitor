@@ -237,3 +237,14 @@
 - [x] Diagnosed: regex /(д{4,})₽/ after stripping spaces could grab wrong number sequence
 - [x] Fixed: use dedicated price element selector first, fallback to regex; added sanity cap at 2,000,000 ₽
 - [x] Deleted incorrectly priced listing from DB (price > 2,000,000)
+
+## Bug: "Отправить в TG" возвращает 0
+- [ ] Диагностировать почему sendPendingListings отправляет 0 сообщений
+- [ ] Проверить флаг isSent в БД — возможно все объявления уже помечены как отправленные
+- [ ] Исправить логику или добавить кнопку "Переотправить всё"
+
+## Feature: Auto-scrape after saving search config
+- [x] After handleSave succeeds in Settings.tsx, automatically trigger scraper.triggerAll
+- [x] Show progress indicator during auto-scrape (reuse existing progress polling)
+- [x] Navigate to Home tab after scrape completes so user sees updated results
+- [x] Remove stale text "Изменения вступят в силу при следующем запуске мониторинга"

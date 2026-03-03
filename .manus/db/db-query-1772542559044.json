@@ -1,0 +1,80 @@
+{
+  "query": "SELECT id, platform, price, isSent, status FROM listings ORDER BY firstSeen DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platform, price, isSent, status FROM listings ORDER BY firstSeen DESC LIMIT 15;",
+  "rows": [
+    {
+      "id": "90002",
+      "platform": "yandex",
+      "price": "61560",
+      "isSent": "1",
+      "status": "new"
+    },
+    {
+      "id": "90001",
+      "platform": "yandex",
+      "price": "67528",
+      "isSent": "1",
+      "status": "new"
+    },
+    {
+      "id": "60001",
+      "platform": "yandex",
+      "price": "60000",
+      "isSent": "1",
+      "status": "not_interesting"
+    },
+    {
+      "id": "30037",
+      "platform": "yandex",
+      "price": "55000",
+      "isSent": "1",
+      "status": "new"
+    },
+    {
+      "id": "30041",
+      "platform": "yandex",
+      "price": "64998",
+      "isSent": "1",
+      "status": "new"
+    },
+    {
+      "id": "30038",
+      "platform": "yandex",
+      "price": "60458",
+      "isSent": "1",
+      "status": "not_interesting"
+    },
+    {
+      "id": "30030",
+      "platform": "yandex",
+      "price": "67760",
+      "isSent": "1",
+      "status": "new"
+    },
+    {
+      "id": "30035",
+      "platform": "yandex",
+      "price": "78000",
+      "isSent": "1",
+      "status": "new"
+    },
+    {
+      "id": "30036",
+      "platform": "yandex",
+      "price": "762550",
+      "isSent": "1",
+      "status": "new"
+    },
+    {
+      "id": "30027",
+      "platform": "yandex",
+      "price": "78000",
+      "isSent": "1",
+      "status": "new"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatform\tprice\tisSent\tstatus\n90002\tyandex\t61560\t1\tnew\n90001\tyandex\t67528\t1\tnew\n60001\tyandex\t60000\t1\tnot_interesting\n30037\tyandex\t55000\t1\tnew\n30041\tyandex\t64998\t1\tnew\n30038\tyandex\t60458\t1\tnot_interesting\n30030\tyandex\t67760\t1\tnew\n30035\tyandex\t78000\t1\tnew\n30036\tyandex\t762550\t1\tnew\n30027\tyandex\t78000\t1\tnew\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}
