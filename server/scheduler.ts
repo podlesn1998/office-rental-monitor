@@ -3,12 +3,25 @@ import { sendPendingListings, sendStatusMessage, handleTelegramUpdate } from "./
 import { getTelegramConfig } from "./db";
 
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
+let hourlyReportInterval: ReturnType<typeof setInterval> | null = null;
 let isRunning = false;
 
 const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+const SCRAPE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes hard timeout
+
+// Hourly stats accumulator — reset every hour when report is sent
+const hourlyStats = {
+  cyclesRun: 0,
+  cyclesTimedOut: 0,
+  cyclesErrored: 0,
+  newListingsFound: 0,
+  notificationsSent: 0,
+  hourStart: Date.now(),
+};
 
 /**
- * Run one full monitoring cycle: scrape all platforms, send new listings via Telegram.
+ * Run one full monitoring cycle with a hard 10-minute timeout.
+ * If the scraper hangs, the timeout rejects and isRunning is reset.
  */
 export async function runMonitoringCycle(): Promise<void> {
   if (isRunning) {
@@ -20,28 +33,101 @@ export async function runMonitoringCycle(): Promise<void> {
   const startTime = Date.now();
   console.log(`[Scheduler] Starting monitoring cycle at ${new Date().toISOString()}`);
 
+  // Hard timeout promise — rejects after SCRAPE_TIMEOUT_MS
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("SCRAPE_TIMEOUT")), SCRAPE_TIMEOUT_MS)
+  );
+
   try {
-    const result = await runAllScrapers();
+    const result = await Promise.race([runAllScrapers(), timeoutPromise]);
 
     if (result.newCount > 0) {
       console.log(`[Scheduler] Found ${result.newCount} new listings, sending notifications...`);
       const sent = await sendPendingListings();
       console.log(`[Scheduler] Sent ${sent} Telegram notifications`);
+      hourlyStats.notificationsSent += sent;
     } else {
       console.log("[Scheduler] No new listings found");
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`[Scheduler] Cycle complete in ${duration}s: ${result.found} found, ${result.newCount} new`);
+
+    hourlyStats.cyclesRun += 1;
+    hourlyStats.newListingsFound += result.newCount;
   } catch (err) {
-    console.error("[Scheduler] Cycle error:", err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (errMsg === "SCRAPE_TIMEOUT") {
+      console.error("[Scheduler] Cycle TIMED OUT after 10 minutes — forcing reset");
+      hourlyStats.cyclesTimedOut += 1;
+    } else {
+      console.error("[Scheduler] Cycle error:", err);
+      hourlyStats.cyclesErrored += 1;
+    }
   } finally {
     isRunning = false;
   }
 }
 
 /**
- * Start the 30-minute monitoring scheduler.
+ * Build and send the hourly Telegram report.
+ */
+async function sendHourlyReport(): Promise<void> {
+  const now = new Date();
+  const hourLabel = now.toLocaleString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "short",
+    timeZone: "Europe/Moscow",
+  });
+
+  const durationMin = Math.round((Date.now() - hourlyStats.hourStart) / 60000);
+
+  const statusEmoji =
+    hourlyStats.cyclesTimedOut > 0 || hourlyStats.cyclesErrored > 0 ? "⚠️" : "✅";
+
+  const lines: string[] = [
+    `${statusEmoji} <b>Отчёт за час</b> — ${hourLabel} МСК`,
+    "",
+    `🔄 Циклов выполнено: <b>${hourlyStats.cyclesRun}</b>`,
+    `🏠 Новых объявлений: <b>${hourlyStats.newListingsFound}</b>`,
+    `📨 Уведомлений отправлено: <b>${hourlyStats.notificationsSent}</b>`,
+  ];
+
+  if (hourlyStats.cyclesTimedOut > 0) {
+    lines.push(`⏱ Зависаний (таймаут 10 мин): <b>${hourlyStats.cyclesTimedOut}</b>`);
+  }
+  if (hourlyStats.cyclesErrored > 0) {
+    lines.push(`❌ Ошибок: <b>${hourlyStats.cyclesErrored}</b>`);
+  }
+
+  if (hourlyStats.cyclesRun === 0 && hourlyStats.cyclesTimedOut === 0) {
+    lines.push(`\n💤 Циклов не было (сервер только запустился или все платформы отключены)`);
+  }
+
+  lines.push(`\n⏰ Период: ${durationMin} мин`);
+
+  const message = lines.join("\n");
+
+  try {
+    await sendStatusMessage(message);
+    console.log("[Scheduler] Hourly report sent");
+  } catch (err) {
+    console.error("[Scheduler] Failed to send hourly report:", err);
+  }
+
+  // Reset stats for next hour
+  hourlyStats.cyclesRun = 0;
+  hourlyStats.cyclesTimedOut = 0;
+  hourlyStats.cyclesErrored = 0;
+  hourlyStats.newListingsFound = 0;
+  hourlyStats.notificationsSent = 0;
+  hourlyStats.hourStart = Date.now();
+}
+
+/**
+ * Start the 30-minute monitoring scheduler and hourly report.
  */
 export function startScheduler(): void {
   if (schedulerInterval) {
@@ -62,7 +148,12 @@ export function startScheduler(): void {
     await runMonitoringCycle();
   }, INTERVAL_MS);
 
-  console.log(`[Scheduler] Scheduler started. First run in 2 minutes, then every 30 minutes.`);
+  // Hourly report — first report after 1 hour, then every hour
+  hourlyReportInterval = setInterval(async () => {
+    await sendHourlyReport();
+  }, 60 * 60 * 1000); // every 60 minutes
+
+  console.log(`[Scheduler] Scheduler started. First run in 2 minutes, then every 30 minutes. Hourly reports enabled.`);
 }
 
 /**
@@ -73,6 +164,11 @@ export function stopScheduler(): void {
     clearInterval(schedulerInterval);
     schedulerInterval = null;
     console.log("[Scheduler] Scheduler stopped");
+  }
+  if (hourlyReportInterval) {
+    clearInterval(hourlyReportInterval);
+    hourlyReportInterval = null;
+    console.log("[Scheduler] Hourly report stopped");
   }
 }
 

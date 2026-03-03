@@ -225,3 +225,10 @@
 - [x] Update Telegram callback statusText: "Просмотрено" → "Отмечено как неинтересное"
 - [x] Update Telegram topic label in Settings UI: "Просмотренные" → "Неинтересные"
 - [x] Update threadViewed → threadNotInteresting in schema, DB, routers, db.ts, telegram.ts, TelegramPage.tsx
+
+## Fix: Scraper Hang + Hourly Telegram Report
+- [x] Add 10-minute global timeout via Promise.race — if exceeded, isRunning resets and cycle is counted as timed out
+- [x] isRunning always reset in finally block (even on unhandled errors)
+- [x] Add hourly Telegram report: time, cycles run, new listings found, notifications sent, timeouts, errors
+- [x] Hourly stats accumulator in memory, reset after each report
+- [x] Report sent every 60 minutes via separate setInterval
