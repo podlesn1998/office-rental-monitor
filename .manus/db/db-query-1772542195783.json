@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, platform, title, price, address, url, area FROM listings WHERE price > 1000000;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platform, title, price, address, url, area FROM listings WHERE price > 1000000;",
+  "rows": [
+    {
+      "id": "120001",
+      "platform": "yandex",
+      "title": "53,9 м² · офис · 2 этаж из 3",
+      "price": "45070070",
+      "address": "Лиговский проспект, 50Р",
+      "url": "https://realty.yandex.ru/offer/5086569032733180161/",
+      "area": "54"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatform\ttitle\tprice\taddress\turl\tarea\n120001\tyandex\t53,9 м² · офис · 2 этаж из 3\t45070070\tЛиговский проспект, 50Р\thttps://realty.yandex.ru/offer/5086569032733180161/\t54\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}

@@ -232,3 +232,8 @@
 - [x] Add hourly Telegram report: time, cycles run, new listings found, notifications sent, timeouts, errors
 - [x] Hourly stats accumulator in memory, reset after each report
 - [x] Report sent every 60 minutes via separate setInterval
+
+## Bug: Incorrect Price Parsing (Yandex)
+- [x] Diagnosed: regex /(д{4,})₽/ after stripping spaces could grab wrong number sequence
+- [x] Fixed: use dedicated price element selector first, fallback to regex; added sanity cap at 2,000,000 ₽
+- [x] Deleted incorrectly priced listing from DB (price > 2,000,000)

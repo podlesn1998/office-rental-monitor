@@ -59,8 +59,23 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
 
       const fullText = container.textContent ?? "";
 
-      const priceMatch = fullText.replace(/\s/g, "").match(/(\d{4,})\s*₽/);
-      const price = priceMatch ? parseInt(priceMatch[1]) : null;
+      // Extract price: find digits immediately before ₽ (after stripping whitespace)
+      // Use a dedicated price element first, fall back to regex on stripped text
+      const priceEl = container.querySelector('[class*="price"], [class*="Price"], [class*="cost"], [class*="Cost"]');
+      let price: number | null = null;
+      if (priceEl) {
+        const priceText = priceEl.textContent?.replace(/\s/g, "") ?? "";
+        const m = priceText.match(/(\d+)₽/);
+        if (m) price = parseInt(m[1]);
+      }
+      if (!price) {
+        // Fallback: find the number directly before ₽ in full text
+        const stripped = fullText.replace(/\s/g, "");
+        const m = stripped.match(/(\d{4,})₽/);
+        if (m) price = parseInt(m[1]);
+      }
+      // Sanity check: monthly office rent should not exceed 2,000,000 ₽
+      if (price && price > 2000000) price = null;
 
       // Read title first — Yandex titles reliably contain area as "XX м² · офис"
       const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
