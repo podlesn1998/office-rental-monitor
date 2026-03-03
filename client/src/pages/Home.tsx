@@ -244,6 +244,14 @@ function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStat
                 <span>потолок {(listing.ceilingHeight / 100).toFixed(1)} м</span>
               </div>
             )}
+            {listing.floor != null && (
+              <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                <Layers size={11} />
+                <span>
+                  {listing.floor}-й эт.{listing.totalFloors ? ` из ${listing.totalFloors}` : ""}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -272,12 +280,6 @@ function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStat
                 <span className="text-muted-foreground"> — {listing.metroDistanceMin} мин пешком</span>
               )}
             </span>
-          </div>
-        )}
-
-        {listing.floor && (
-          <div className="text-xs text-muted-foreground mb-2">
-            {listing.floor} этаж{listing.totalFloors ? ` из ${listing.totalFloors}` : ""}
           </div>
         )}
 

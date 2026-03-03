@@ -262,3 +262,6 @@
 - [x] Parse floor and totalFloors in Yandex scraper
 - [x] Add rescore procedure (listings_rescore.all) and button in Settings
 - [x] Verify minFloor/maxFloor filter works end-to-end
+
+## Feature: Show Floor on Listing Cards
+- [x] Display floor/totalFloors on listing cards in Home.tsx (moved into area/ceiling block with Layers icon)
