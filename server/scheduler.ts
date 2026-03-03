@@ -108,7 +108,10 @@ export async function registerTelegramWebhook(webhookUrl: string): Promise<boole
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: webhookUrl }),
+      body: JSON.stringify({
+        url: webhookUrl,
+        allowed_updates: ["message", "callback_query", "channel_post"],
+      }),
     });
 
     const data = (await response.json()) as { ok: boolean; description?: string };
