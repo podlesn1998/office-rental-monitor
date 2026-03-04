@@ -1,6 +1,6 @@
 import { runAllScrapers } from "./scrapers/index";
 import { sendPendingListings, sendStatusMessage, handleTelegramUpdate } from "./telegram";
-import { getTelegramConfig } from "./db";
+import { getTelegramConfig, resetDbConnection } from "./db";
 
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 let hourlyReportInterval: ReturnType<typeof setInterval> | null = null;
@@ -63,6 +63,13 @@ export async function runMonitoringCycle(): Promise<void> {
     } else {
       console.error("[Scheduler] Cycle error:", err);
       hourlyStats.cyclesErrored += 1;
+      // If DB connection was dropped (idle timeout), reset so next cycle reconnects
+      const cause = (err as any)?.cause;
+      const code = (err as any)?.code ?? cause?.code;
+      if (code === "ECONNRESET" || code === "PROTOCOL_CONNECTION_LOST" || code === "ECONNREFUSED") {
+        console.warn("[Scheduler] DB connection lost — resetting pool for next cycle");
+        resetDbConnection();
+      }
     }
   } finally {
     isRunning = false;

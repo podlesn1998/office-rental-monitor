@@ -265,3 +265,8 @@
 
 ## Feature: Show Floor on Listing Cards
 - [x] Display floor/totalFloors on listing cards in Home.tsx (moved into area/ceiling block with Layers icon)
+
+## Bug: ECONNRESET after idle period (scheduler stops) - FIXED
+- [x] Switched DB from single connection to mysql2 pool with enableKeepAlive + keepAliveInitialDelay=30s
+- [x] Added resetDbConnection() to clear stale pool on ECONNRESET/PROTOCOL_CONNECTION_LOST
+- [x] Scheduler now calls resetDbConnection() on DB errors so next cycle reconnects cleanly

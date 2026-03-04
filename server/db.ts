@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, isNotNull, isNull, notInArray, sql, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { createPool as createMysqlPool } from "mysql2/promise";
 import {
   InsertUser,
   listings,
@@ -10,18 +11,37 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
+type MysqlPool = ReturnType<typeof createMysqlPool>;
+let _pool: MysqlPool | null = null;
 let _db: ReturnType<typeof drizzle> | null = null;
 
+function initPool() {
+  if (!process.env.DATABASE_URL) return null;
+  const pool = createMysqlPool({
+    uri: process.env.DATABASE_URL,
+    waitForConnections: true,
+    connectionLimit: 5,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 30000, // 30s keepalive ping
+  });
+  // Reset cached db if a connection is lost so next call reconnects
+  pool.on("connection", () => {});
+  return pool;
+}
+
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
+  if (!_pool) {
+    _pool = initPool();
+    _db = _pool ? drizzle(_pool as any) : null;
   }
   return _db;
+}
+
+// Call this to force reconnect after ECONNRESET
+export function resetDbConnection() {
+  try { void _pool?.end(); } catch {}
+  _pool = null;
+  _db = null;
 }
 
 // ---- User helpers ----
