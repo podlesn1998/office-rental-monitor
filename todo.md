@@ -293,3 +293,11 @@
 - [x] Inspected live CIAN page: new structure uses data-name="CommercialOfferCard"
 - [x] Rewrote parseCianPage to use CommercialOfferCard, CommercialTitle, Underground, AddressPathItem selectors
 - [x] Verified: Parsed 25 cards per page, 15 new listings saved
+
+## Bug: CIAN price shows "Цена не указана" despite prices being present - FIXED
+- [x] Fixed price regex to strip \u00a0 non-breaking spaces before matching
+- [x] Fixed floor parsing: distinguish "этаж" (floor) from "этажей" (total floors)
+
+## Bug: Yandex scraper returns 404 (URL changed) - FIXED
+- [x] Fixed URL: svobodnoe-naznachenie → pomeshchenie-svobodnogo-naznacheniya
+- [x] Fixed price regex to strip \u00a0 non-breaking spaces

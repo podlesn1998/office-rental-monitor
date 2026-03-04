@@ -88,10 +88,14 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
       const titleText = titleEl?.textContent?.trim() ?? "";
 
       // Price — extract from CommercialTitle text or full card text
-      // Format: "82 м² за 550 000 руб./мес." or "550 000 ₽/мес."
+      // Format: "82 м² за 550 000 руб./мес." or "154 800 ₽/мес." (may use non-breaking spaces \u00a0)
       let price: number | null = null;
-      const priceMatch = fullText.replace(/\s/g, "").match(/(\d{4,})(?:руб|₽)\/мес/);
+      // Strip ALL whitespace including \u00a0 (non-breaking space) before matching
+      const strippedForPrice = fullText.replace(/[\s\u00a0]/g, "");
+      const priceMatch = strippedForPrice.match(/(\d{4,})(?:руб\.?\/мес|₽\/мес)/);
       if (priceMatch) price = parseInt(priceMatch[1]);
+      // Sanity check: monthly office rent should not exceed 5,000,000 ₽
+      if (price && price > 5000000) price = null;
 
       // Area — extract from CommercialTitle or full text
       // Format: "82 м²" or "77,4 – 199,6 м²" (take first/min value)
@@ -153,29 +157,41 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
         if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
       }
 
-      // Floor: CommercialFactoid may contain "1 этаж", or title/text has "1/5 эт."
+      // Floor: CommercialFactoid may contain "1 этаж" (floor of unit) or "25 этажей" (total floors of building)
+      // IMPORTANT: distinguish "этаж" (floor) from "этажей" (total floors count)
       let floor: number | null = null;
       let totalFloors: number | null = null;
+
+      // First: extract totalFloors from factoid "N этажей"
+      const factoids = Array.from(card.querySelectorAll('[data-name="CommercialFactoid"]'))
+        .map(el => el.textContent?.trim() ?? "");
+      for (const factoid of factoids) {
+        const totalMatch = factoid.match(/^(\d+)\s*этажей/i);
+        if (totalMatch) { totalFloors = parseInt(totalMatch[1]); break; }
+      }
+
+      // Pattern: "1/5 эт." or "этаж 1 из 5" or "1 из 5 эт"
       const floorSlashMatch = fullText.match(/(\d+)\s*\/\s*(\d+)\s*эт/i)
         || fullText.match(/этаж\s+(\d+)\s+из\s+(\d+)/i)
         || fullText.match(/(\d+)\s+из\s+(\d+)\s+эт/i);
       if (floorSlashMatch) {
         const f = parseInt(floorSlashMatch[1]);
         const t = parseInt(floorSlashMatch[2]);
-        if (f >= 1 && f <= 100 && t >= f) { floor = f; totalFloors = t; }
+        if (f >= 1 && f <= 100 && t >= f) { floor = f; if (!totalFloors) totalFloors = t; }
       }
+
       if (floor === null) {
-        // CommercialFactoid may have "1 этаж" directly
-        const factoids = Array.from(card.querySelectorAll('[data-name="CommercialFactoid"]'))
-          .map(el => el.textContent?.trim() ?? "");
+        // CommercialFactoid: "1 этаж" (exact match, NOT "этажей")
         for (const factoid of factoids) {
-          const fm = factoid.match(/^(\d+)\s*этаж/i) || factoid.match(/этаж\s*(\d+)/i);
+          // Match "1 этаж" but NOT "25 этажей"
+          const fm = factoid.match(/^(\d+)\s*этаж(?!ей)/i);
           if (fm) { floor = parseInt(fm[1]); break; }
         }
       }
+
       if (floor === null) {
-        const floorSingleMatch = fullText.match(/(\d+)[-й]?\s*этаж/i)
-          || fullText.match(/этаж\s*(\d+)/i);
+        // Fallback: "N этаж" in full text (not "этажей")
+        const floorSingleMatch = fullText.match(/(\d+)[-й]?\s*этаж(?!е)/i);
         if (floorSingleMatch) {
           const f = parseInt(floorSingleMatch[1]);
           if (f >= 1 && f <= 100) floor = f;

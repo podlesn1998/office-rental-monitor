@@ -7,7 +7,7 @@ import { guessDistrict } from "./district";
 const YANDEX_OFFICE_TYPE_PATH: Record<string, string> = {
   office: "ofis",
   coworking: "ofis",       // Yandex doesn't separate coworking, use office
-  free_purpose: "svobodnoe-naznachenie",
+  free_purpose: "pomeshchenie-svobodnogo-naznacheniya",
   all: "ofis",
 };
 
@@ -64,18 +64,19 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
       const priceEl = container.querySelector('[class*="price"], [class*="Price"], [class*="cost"], [class*="Cost"]');
       let price: number | null = null;
       if (priceEl) {
-        const priceText = priceEl.textContent?.replace(/\s/g, "") ?? "";
-        const m = priceText.match(/(\d+)₽/);
+        // Strip all whitespace to handle "133 200₽" → "133200₽"
+        const priceText = priceEl.textContent?.replace(/[\s\u00a0]/g, "") ?? "";
+        const m = priceText.match(/(\d{4,})₽/);
         if (m) price = parseInt(m[1]);
       }
       if (!price) {
-        // Fallback: find the number directly before ₽ in full text
-        const stripped = fullText.replace(/\s/g, "");
+        // Fallback: strip all whitespace from full text and find digits before ₽
+        const stripped = fullText.replace(/[\s\u00a0]/g, "");
         const m = stripped.match(/(\d{4,})₽/);
         if (m) price = parseInt(m[1]);
       }
-      // Sanity check: monthly office rent should not exceed 2,000,000 ₽
-      if (price && price > 2000000) price = null;
+      // Sanity check: monthly office rent should not exceed 5,000,000 ₽
+      if (price && price > 5000000) price = null;
 
       // Read title first — Yandex titles reliably contain area as "XX м² · офис"
       const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
