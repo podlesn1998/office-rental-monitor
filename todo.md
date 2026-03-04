@@ -301,3 +301,13 @@
 ## Bug: Yandex scraper returns 404 (URL changed) - FIXED
 - [x] Fixed URL: svobodnoe-naznachenie → pomeshchenie-svobodnogo-naznacheniya
 - [x] Fixed price regex to strip \u00a0 non-breaking spaces
+
+## Feature: Comment after Интересно/Неинтересно button in Telegram
+- [x] Add `comment` text column to listings table in drizzle/schema.ts
+- [x] Generate and apply DB migration for comment column
+- [x] Add `pendingComment` in-memory map: listingId → { chatId, messageId, status }
+- [x] After status button press: bot sends "Напишите комментарий (или /skip)" and waits
+- [x] On next text message from same chat: save comment to DB, confirm, clear pending state
+- [x] /skip command: skip comment, confirm without saving
+- [x] Show comment on listing card in Home.tsx (below status badge)
+- [x] Show comment in Telegram re-send message when moving to Интересные/Неинтересные topic

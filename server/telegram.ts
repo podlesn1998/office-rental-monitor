@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { listings, telegramConfig, type Listing } from "../drizzle/schema";
-import { getDb, updateListingStatus } from "./db";
+import { getDb, updateListingStatus, updateListingComment } from "./db";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -12,9 +12,21 @@ const PLATFORM_INFO: Record<string, { name: string; emoji: string }> = {
 };
 
 /**
+ * In-memory map of chats waiting for a comment.
+ * Key: chatId (string), Value: { listingId, status, originalMessageId }
+ */
+interface PendingComment {
+  listingId: number;
+  status: "interesting" | "not_interesting";
+  /** The message_id of the "Напишите комментарий..." prompt, so we can delete it after */
+  promptMessageId: number | null;
+}
+const pendingComments = new Map<string, PendingComment>();
+
+/**
  * Format a listing into a Telegram message card (HTML format).
  */
-export function formatListingMessage(listing: Listing): string {
+export function formatListingMessage(listing: Listing, includeComment = true): string {
   const platform = PLATFORM_INFO[listing.platform] ?? { name: listing.platform, emoji: "📋" };
   const price = listing.price
     ? `${Number(listing.price).toLocaleString("ru-RU")} ₽/мес`
@@ -63,6 +75,12 @@ export function formatListingMessage(listing: Listing): string {
   }
 
   lines.push(`🔗 <a href="${listing.url}">Открыть объявление</a>`);
+
+  // Append comment if present
+  if (includeComment && listing.comment) {
+    lines.push("");
+    lines.push(`💬 <i>${listing.comment}</i>`);
+  }
 
   return lines.filter((l) => l !== undefined).join("\n");
 }
@@ -119,6 +137,37 @@ async function sendTelegramMessage(
   } catch (err) {
     console.error("[Telegram] sendMessage error:", err);
     return false;
+  }
+}
+
+/**
+ * Send a text message and return the message_id (or null on failure).
+ */
+async function sendTelegramMessageWithId(
+  botToken: string,
+  chatId: string,
+  text: string,
+  options: Record<string, unknown> = {}
+): Promise<number | null> {
+  try {
+    const url = `${TELEGRAM_API}/bot${botToken}/sendMessage`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        ...options,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) return null;
+    const data = await response.json() as { result?: { message_id?: number } };
+    return data.result?.message_id ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -286,7 +335,7 @@ export async function sendListingsBatch(
       if (db) {
         await db
           .update(listings)
-          .set({ isSent: true, isNew: false, telegramMessageId: messageId })
+          .set({ isSent: true, telegramMessageId: messageId })
           .where(eq(listings.id, listing.id));
       }
     }
@@ -508,9 +557,10 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
       const newStatus = match[1] as "new" | "not_interesting" | "interesting";
       const listingId = parseInt(match[2], 10);
 
-       await updateListingStatus(listingId, newStatus);
+      await updateListingStatus(listingId, newStatus);
       const statusText = newStatus === "not_interesting" ? "Отмечено как неинтересное" : newStatus === "interesting" ? "Добавлено в Интересные" : "Статус сброшен";
       await answerCallbackQuery(config.botToken, callbackId, `✅ ${statusText}`);
+
       // Move message to target topic thread if configured
       const targetThread = newStatus === "interesting" ? config.threadInteresting : newStatus === "not_interesting" ? config.threadNotInteresting : null;
       // Only update keyboard if NOT moving to another topic (message will be deleted)
@@ -534,8 +584,44 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
           }
         }
       }
+
+      // Ask for a comment (only when setting a real status, not resetting to "new")
+      if (newStatus !== "new" && config.chatId) {
+        const statusLabel = newStatus === "interesting" ? "⭐ Интересно" : "👎 Неинтересно";
+        const promptText = `${statusLabel}\n\nДобавьте комментарий к объявлению (или отправьте /skip чтобы пропустить):`;
+        const promptMsgId = await sendTelegramMessageWithId(config.botToken, callbackChatId, promptText, {
+          reply_markup: {
+            inline_keyboard: [[{ text: "⏭ Пропустить", callback_data: `skip_comment:${listingId}` }]],
+          },
+        });
+        pendingComments.set(callbackChatId, {
+          listingId,
+          status: newStatus as "interesting" | "not_interesting",
+          promptMessageId: promptMsgId,
+        });
+      }
     } else {
-      await answerCallbackQuery(config.botToken, callbackId);
+      // Handle skip_comment inline button
+      const skipMatch = data.match(/^skip_comment:(\d+)$/);
+      if (skipMatch) {
+        const listingId = parseInt(skipMatch[1], 10);
+        const db2 = await getDb();
+        const configs2 = db2 ? await db2.select().from(telegramConfig).limit(1) : [];
+        const config2 = configs2[0];
+        if (!config2?.botToken) return;
+
+        // Remove pending state
+        pendingComments.delete(callbackChatId);
+
+        // Delete the prompt message
+        if (callbackMessageId) {
+          await deleteMessage(config2.botToken, callbackChatId, callbackMessageId);
+        }
+
+        await answerCallbackQuery(config2.botToken, callbackId, "Комментарий пропущен");
+      } else {
+        await answerCallbackQuery(config.botToken, callbackId);
+      }
     }
     return;
   }
@@ -554,6 +640,34 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
   if (!config?.botToken) return;
 
   const botToken = config.botToken;
+
+  // Check if this chat is waiting for a comment
+  const pending = pendingComments.get(chatId);
+  if (pending) {
+    // /skip command or "пропустить"
+    if (text.startsWith("/skip") || text.toLowerCase() === "пропустить") {
+      pendingComments.delete(chatId);
+      // Delete prompt message if we have its ID
+      if (pending.promptMessageId) {
+        await deleteMessage(botToken, chatId, pending.promptMessageId);
+      }
+      await sendTelegramMessage(botToken, chatId, "⏭ Комментарий пропущен.");
+      return;
+    }
+
+    // Save the comment
+    const comment = text.trim().slice(0, 500); // max 500 chars
+    await updateListingComment(pending.listingId, comment);
+    pendingComments.delete(chatId);
+
+    // Delete the prompt message
+    if (pending.promptMessageId) {
+      await deleteMessage(botToken, chatId, pending.promptMessageId);
+    }
+
+    await sendTelegramMessage(botToken, chatId, `✅ Комментарий сохранён:\n<i>${comment}</i>`);
+    return;
+  }
 
   if (text.startsWith("/getids")) {
     const threadId = (message.message_thread_id as number | undefined) ?? null;

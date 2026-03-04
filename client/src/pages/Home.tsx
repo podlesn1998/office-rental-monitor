@@ -16,6 +16,7 @@ import {
   Eye,
   Star,
   Clock,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState as useStateLocal, useRef, useEffect } from "react";
@@ -56,6 +57,7 @@ interface ListingItem {
   status: ListingStatus;
   createdAt: Date | string | null;
   score: number;
+  comment: string | null;
 }
 
 // Compute score breakdown on the frontend (mirrors server/utils/scoreListing.ts)
@@ -299,6 +301,14 @@ function ListingCard({ listing, onStatusChange }: { listing: ListingItem; onStat
           <ExternalLink size={14} />
           Открыть объявление
         </a>
+
+        {/* Comment display */}
+        {listing.comment && (
+          <div className="flex items-start gap-2 mb-3 px-3 py-2 rounded-xl bg-muted/50 border border-border">
+            <MessageSquare size={13} className="text-muted-foreground mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground italic leading-relaxed">{listing.comment}</p>
+          </div>
+        )}
 
         {/* Status action buttons */}
         <div className="flex gap-2">

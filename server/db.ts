@@ -101,6 +101,12 @@ export async function updateListingStatus(id: number, status: "new" | "not_inter
   await db.update(listings).set({ status }).where(eq(listings.id, id));
 }
 
+export async function updateListingComment(id: number, comment: string | null) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(listings).set({ comment }).where(eq(listings.id, id));
+}
+
 export async function getListings(opts: {
   platform?: "cian" | "avito" | "yandex";
   isNew?: boolean;
