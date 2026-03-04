@@ -38,10 +38,15 @@ export async function getDb() {
 }
 
 // Call this to force reconnect after ECONNRESET
+// DO NOT call pool.end() — it permanently closes the pool and causes "Pool is closed" errors
+// Simply drop the references; mysql2 will GC the old pool and the next getDb() creates a fresh one
 export function resetDbConnection() {
-  try { void _pool?.end(); } catch {}
   _pool = null;
   _db = null;
+  // Eagerly create a new pool so the next query doesn't need to wait
+  _pool = initPool();
+  _db = _pool ? drizzle(_pool as any) : null;
+  console.log("[Database] Pool recreated after connection loss");
 }
 
 // ---- User helpers ----

@@ -122,6 +122,14 @@ async function sendHourlyReport(): Promise<void> {
     console.log("[Scheduler] Hourly report sent");
   } catch (err) {
     console.error("[Scheduler] Failed to send hourly report:", err);
+    // Reset DB pool if connection was lost during report
+    const cause = (err as any)?.cause;
+    const code = (err as any)?.code ?? cause?.code;
+    const msg = (err as any)?.message ?? cause?.message ?? "";
+    if (code === "ECONNRESET" || code === "PROTOCOL_CONNECTION_LOST" || msg.includes("Pool is closed")) {
+      console.warn("[Scheduler] DB connection lost during hourly report — resetting pool");
+      resetDbConnection();
+    }
   }
 
   // Reset stats for next hour

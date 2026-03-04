@@ -270,3 +270,7 @@
 - [x] Switched DB from single connection to mysql2 pool with enableKeepAlive + keepAliveInitialDelay=30s
 - [x] Added resetDbConnection() to clear stale pool on ECONNRESET/PROTOCOL_CONNECTION_LOST
 - [x] Scheduler now calls resetDbConnection() on DB errors so next cycle reconnects cleanly
+
+## Bug: Pool is closed after resetDbConnection (ECONNRESET v2) - FIXED
+- [x] resetDbConnection now immediately creates a new pool instead of calling pool.end()
+- [x] Hourly report error handler also calls resetDbConnection on Pool is closed / ECONNRESET
