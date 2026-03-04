@@ -1,0 +1,18 @@
+{
+  "query": "SELECT officeType, minArea, maxArea, minPrice, maxPrice, footMin FROM searchConfig LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT officeType, minArea, maxArea, minPrice, maxPrice, footMin FROM searchConfig LIMIT 1;",
+  "rows": [
+    {
+      "officeType": "free_purpose",
+      "minArea": "40",
+      "maxArea": "70",
+      "minPrice": "50000",
+      "maxPrice": "90000",
+      "footMin": "45"
+    }
+  ],
+  "messages": [],
+  "stdout": "officeType\tminArea\tmaxArea\tminPrice\tmaxPrice\tfootMin\nfree_purpose\t40\t70\t50000\t90000\t45\n",
+  "stderr": "",
+  "execution_time_ms": 367
+}

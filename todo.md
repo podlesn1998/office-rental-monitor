@@ -281,3 +281,10 @@
 
 ## Bug: "Обновлено" shows date of last listing, not last scraper run - FIXED
 - [x] Fixed lastScrapeAt to use MAX(finishedAt) from scrapeLogs WHERE status='success'
+
+## Bug: CIAN free_purpose uses wrong office_type code
+- [ ] Find correct CIAN code for свободного назначения and fix OFFICE_TYPE_CODES
+
+## Bug: CIAN free_purpose uses wrong office_type code - FIXED
+- [x] Verified live CIAN URLs: office_type=5 is PSN (\u0441\u0432\u043e\u0431\u043e\u0434\u043d\u043e\u0433\u043e \u043d\u0430\u0437\u043d\u0430\u0447\u0435\u043d\u0438\u044f), office_type=4 is \u041e\u0444\u0438\u0441
+- [x] Fixed OFFICE_TYPE_CODES: free_purpose=[5], office=[4]

@@ -4,10 +4,14 @@ import type { SearchParams } from "./index";
 import { guessDistrict } from "./district";
 
 // CIAN office type codes
+// Verified from live CIAN URLs:
+// office_type=4 → Офис
+// office_type=5 → Помещение свободного назначения (PSN)
+// office_type=9 → Коворкинг
 const OFFICE_TYPE_CODES: Record<string, number[]> = {
-  office: [5],           // Офис
+  office: [4],           // Офис
   coworking: [9],        // Коворкинг
-  free_purpose: [4],     // Свободного назначения
+  free_purpose: [5],     // Свободного назначения
   all: [4, 5, 9],        // Все типы
 };
 
