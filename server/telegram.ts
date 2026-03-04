@@ -42,23 +42,73 @@ async function editListingCardWithComment(
   const updatedListing = { ...listing, comment } as Listing;
   const newText = formatListingMessage(updatedListing, true);
 
-  const endpoint = hasPhoto ? "editMessageCaption" : "editMessageText";
-  const bodyField = hasPhoto ? "caption" : "text";
+  // Build the inline keyboard for the listing (preserve status buttons)
+  const currentStatus = listing.status as string;
+  const listingId = listing.id;
+  const replyMarkup = {
+    inline_keyboard: [
+      [
+        {
+          text: currentStatus === "not_interesting" ? "👎 Неинтересно (сбросить)" : "👎 Неинтересно",
+          callback_data: currentStatus === "not_interesting" ? `status:new:${listingId}` : `status:not_interesting:${listingId}`,
+        },
+        {
+          text: currentStatus === "interesting" ? "⭐ Интересно (сбросить)" : "⭐ Интересно",
+          callback_data: currentStatus === "interesting" ? `status:new:${listingId}` : `status:interesting:${listingId}`,
+        },
+      ],
+    ],
+  };
 
-  try {
-    await fetch(`${TELEGRAM_API}/bot${botToken}/${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        message_id: messageId,
-        [bodyField]: hasPhoto ? newText.slice(0, 1024) : newText,
-        parse_mode: "HTML",
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-  } catch {
-    // Silently ignore — message may be too old (>48h) or deleted
+  // Try photo caption edit first, then text edit
+  const attempts: Array<{ endpoint: string; bodyField: string; content: string }> = hasPhoto
+    ? [{ endpoint: "editMessageCaption", bodyField: "caption", content: newText.slice(0, 1024) }]
+    : [{ endpoint: "editMessageText", bodyField: "text", content: newText }];
+
+  for (const { endpoint, bodyField, content } of attempts) {
+    try {
+      const res = await fetch(`${TELEGRAM_API}/bot${botToken}/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          [bodyField]: content,
+          parse_mode: "HTML",
+          reply_markup: replyMarkup,
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      const resBody = await res.text();
+      if (res.ok) {
+        console.log(`[Telegram] Edited listing card ${messageId} with comment (${endpoint})`);
+        return;
+      }
+      console.warn(`[Telegram] ${endpoint} failed (${res.status}): ${resBody}`);
+      // If photo caption failed, try text edit as fallback
+      if (hasPhoto && res.status !== 200) {
+        const textRes = await fetch(`${TELEGRAM_API}/bot${botToken}/editMessageText`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            message_id: messageId,
+            text: newText,
+            parse_mode: "HTML",
+            reply_markup: replyMarkup,
+          }),
+          signal: AbortSignal.timeout(8000),
+        });
+        const textBody = await textRes.text();
+        if (textRes.ok) {
+          console.log(`[Telegram] Edited listing card ${messageId} with comment (editMessageText fallback)`);
+          return;
+        }
+        console.warn(`[Telegram] editMessageText fallback failed (${textRes.status}): ${textBody}`);
+      }
+    } catch (err) {
+      console.warn(`[Telegram] editListingCardWithComment exception:`, err);
+    }
   }
 }
 
@@ -614,12 +664,17 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
           if (callbackMessageId) {
             await deleteMessage(config.botToken, callbackChatId, callbackMessageId);
           }
-          // Re-send to target topic
+          // Re-send to target topic and save new message_id
+          let newMsgId: number | null = null;
           if (newStatus === "interesting") {
-            await sendListingNotification(config.botToken, config.chatId, found[0] as Listing, targetThread);
+            newMsgId = await sendListingNotification(config.botToken, config.chatId, found[0] as Listing, targetThread);
           } else if (newStatus === "not_interesting") {
             const notInterestingMsg = `👎 <b>Неинтересно</b>\n\n${formatListingMessage(found[0] as Listing)}`;
-            await sendTelegramMessage(config.botToken, config.chatId, notInterestingMsg, { message_thread_id: targetThread });
+            newMsgId = await sendTelegramMessageWithId(config.botToken, config.chatId, notInterestingMsg, { message_thread_id: targetThread });
+          }
+          // Update telegramMessageId in DB to the new message in the target topic
+          if (newMsgId && db2) {
+            await db2.update(listings).set({ telegramMessageId: newMsgId }).where(eq(listings.id, listingId));
           }
         }
       }
@@ -630,8 +685,9 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
         const db3 = await getDb();
         const listingRow = db3 ? await db3.select().from(listings).where(eq(listings.id, listingId)).limit(1) : [];
         const hasPhoto = Array.isArray((listingRow[0] as any)?.photos) && (listingRow[0] as any).photos.length > 0;
-        // The listing's stored telegramMessageId is the card we want to edit
-        const listingMsgId = (listingRow[0] as any)?.telegramMessageId ?? null;
+        // The listing's stored telegramMessageId is the card we want to edit.
+        // Fall back to callbackMessageId (the message the button was pressed on) if not in DB.
+        const listingMsgId = (listingRow[0] as any)?.telegramMessageId ?? (callbackMessageId || null);
 
         const statusLabel = newStatus === "interesting" ? "⭐ Интересно" : "👎 Неинтересно";
         const promptText = `${statusLabel}\n\nДобавьте комментарий к объявлению (или отправьте /skip чтобы пропустить):`;

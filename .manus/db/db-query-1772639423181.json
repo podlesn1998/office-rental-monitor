@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, platform, price, telegramMessageId, isSent, comment FROM listings WHERE telegramMessageId IS NOT NULL LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platform, price, telegramMessageId, isSent, comment FROM listings WHERE telegramMessageId IS NOT NULL LIMIT 5;",
+  "rows": [
+    {
+      "id": "30027",
+      "platform": "yandex",
+      "price": "78000",
+      "telegramMessageId": "174",
+      "isSent": "1",
+      "comment": "NULL"
+    },
+    {
+      "id": "30030",
+      "platform": "yandex",
+      "price": "67760",
+      "telegramMessageId": "176",
+      "isSent": "1",
+      "comment": "NULL"
+    },
+    {
+      "id": "30035",
+      "platform": "yandex",
+      "price": "78000",
+      "telegramMessageId": "175",
+      "isSent": "1",
+      "comment": "NULL"
+    },
+    {
+      "id": "30036",
+      "platform": "yandex",
+      "price": "762550",
+      "telegramMessageId": "177",
+      "isSent": "1",
+      "comment": "NULL"
+    },
+    {
+      "id": "30037",
+      "platform": "yandex",
+      "price": "55000",
+      "telegramMessageId": "179",
+      "isSent": "1",
+      "comment": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatform\tprice\ttelegramMessageId\tisSent\tcomment\n30027\tyandex\t78000\t174\t1\tNULL\n30030\tyandex\t67760\t176\t1\tNULL\n30035\tyandex\t78000\t175\t1\tNULL\n30036\tyandex\t762550\t177\t1\tNULL\n30037\tyandex\t55000\t179\t1\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 450
+}
