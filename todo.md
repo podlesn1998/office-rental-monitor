@@ -311,3 +311,14 @@
 - [x] /skip command: skip comment, confirm without saving
 - [x] Show comment on listing card in Home.tsx (below status badge)
 - [x] Show comment in Telegram re-send message when moving to Интересные/Неинтересные topic
+
+## Feature: Inline comment on listing card (web UI)
+- [ ] Add tRPC listings.updateComment procedure
+- [ ] Inline comment area on card: click pencil icon → textarea appears, Enter/Save saves, Escape cancels
+- [ ] Show existing comment with edit icon; show "Добавить комментарий" placeholder when empty
+- [ ] Optimistic update in UI after save
+
+## Feature: Append comment to Telegram listing card message
+- [x] Store original listing message_id in pendingComments map
+- [x] After saving comment: edit original Telegram message (editMessageText/editMessageCaption) to append comment line
+- [x] If edit fails (message too old >48h or deleted), silently skip

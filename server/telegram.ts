@@ -13,15 +13,54 @@ const PLATFORM_INFO: Record<string, { name: string; emoji: string }> = {
 
 /**
  * In-memory map of chats waiting for a comment.
- * Key: chatId (string), Value: { listingId, status, originalMessageId }
+ * Key: chatId (string), Value: { listingId, status, promptMessageId, listingMessageId }
  */
 interface PendingComment {
   listingId: number;
   status: "interesting" | "not_interesting";
   /** The message_id of the "Напишите комментарий..." prompt, so we can delete it after */
   promptMessageId: number | null;
+  /** The message_id of the original listing card, to edit it with the comment */
+  listingMessageId: number | null;
+  /** Whether the listing card was sent as a photo (caption) or text */
+  hasPhoto: boolean;
 }
 const pendingComments = new Map<string, PendingComment>();
+
+/**
+ * Edit a listing card message in Telegram to append a comment.
+ * Tries editMessageCaption (for photos) first, then editMessageText.
+ */
+async function editListingCardWithComment(
+  botToken: string,
+  chatId: string,
+  messageId: number,
+  listing: Listing,
+  comment: string,
+  hasPhoto: boolean,
+): Promise<void> {
+  const updatedListing = { ...listing, comment } as Listing;
+  const newText = formatListingMessage(updatedListing, true);
+
+  const endpoint = hasPhoto ? "editMessageCaption" : "editMessageText";
+  const bodyField = hasPhoto ? "caption" : "text";
+
+  try {
+    await fetch(`${TELEGRAM_API}/bot${botToken}/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        [bodyField]: hasPhoto ? newText.slice(0, 1024) : newText,
+        parse_mode: "HTML",
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    // Silently ignore — message may be too old (>48h) or deleted
+  }
+}
 
 /**
  * Format a listing into a Telegram message card (HTML format).
@@ -587,6 +626,13 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
 
       // Ask for a comment (only when setting a real status, not resetting to "new")
       if (newStatus !== "new" && config.chatId) {
+        // Fetch listing to check if it has photos (determines edit endpoint)
+        const db3 = await getDb();
+        const listingRow = db3 ? await db3.select().from(listings).where(eq(listings.id, listingId)).limit(1) : [];
+        const hasPhoto = Array.isArray((listingRow[0] as any)?.photos) && (listingRow[0] as any).photos.length > 0;
+        // The listing's stored telegramMessageId is the card we want to edit
+        const listingMsgId = (listingRow[0] as any)?.telegramMessageId ?? null;
+
         const statusLabel = newStatus === "interesting" ? "⭐ Интересно" : "👎 Неинтересно";
         const promptText = `${statusLabel}\n\nДобавьте комментарий к объявлению (или отправьте /skip чтобы пропустить):`;
         const promptMsgId = await sendTelegramMessageWithId(config.botToken, callbackChatId, promptText, {
@@ -598,6 +644,8 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
           listingId,
           status: newStatus as "interesting" | "not_interesting",
           promptMessageId: promptMsgId,
+          listingMessageId: listingMsgId,
+          hasPhoto,
         });
       }
     } else {
@@ -663,6 +711,23 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
     // Delete the prompt message
     if (pending.promptMessageId) {
       await deleteMessage(botToken, chatId, pending.promptMessageId);
+    }
+
+    // Edit the original listing card to append the comment
+    if (pending.listingMessageId && config.chatId) {
+      const db2 = await getDb();
+      const listingRows = db2 ? await db2.select().from(listings).where(eq(listings.id, pending.listingId)).limit(1) : [];
+      if (listingRows[0]) {
+        const updatedListing = { ...listingRows[0], comment } as Listing;
+        await editListingCardWithComment(
+          botToken,
+          config.chatId,
+          pending.listingMessageId,
+          updatedListing,
+          comment,
+          pending.hasPhoto,
+        );
+      }
     }
 
     await sendTelegramMessage(botToken, chatId, `✅ Комментарий сохранён:\n<i>${comment}</i>`);
