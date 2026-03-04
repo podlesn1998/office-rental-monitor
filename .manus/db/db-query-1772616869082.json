@@ -1,0 +1,18 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(isNew) as is_new FROM listings; SELECT id, active, botToken IS NOT NULL as has_token, chatId FROM telegramConfig LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT COUNT(*) as total, SUM(isSent) as sent, SUM(isNew) as is_new FROM listings; SELECT id, active, botToken IS NOT NULL as has_token, chatId FROM telegramConfig LIMIT 5;",
+  "rows": [
+    {
+      "total": "66",
+      "sent": "66",
+      "is_new": "0"
+    }
+  ],
+  "messages": [
+    "id\tactive\thas_token\tchatId",
+    "1\t1\t1\t-1003767429212"
+  ],
+  "stdout": "total\tsent\tis_new\n66\t66\t0\nid\tactive\thas_token\tchatId\n1\t1\t1\t-1003767429212\n",
+  "stderr": "",
+  "execution_time_ms": 484
+}

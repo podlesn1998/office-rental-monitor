@@ -152,9 +152,11 @@ export async function getListingStats() {
     .from(listings)
     .groupBy(listings.platform);
 
+  // Use the last completed scrape run time, not the last listing creation time
   const lastRow = await db
-    .select({ lastScrapeAt: sql<Date>`max(\`createdAt\`)` })
-    .from(listings)
+    .select({ lastScrapeAt: sql<Date>`max(\`finishedAt\`)` })
+    .from(scrapeLogs)
+    .where(sql`\`status\` = 'success'`)
     .limit(1);
 
   const stats: { total: number; newCount: number; cian: number; avito: number; yandex: number; lastScrapeAt: Date | null } = {

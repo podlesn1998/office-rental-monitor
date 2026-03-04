@@ -278,3 +278,6 @@
 ## Feature: Telegram alert on Cycle error - DONE
 - [x] Send ⚠️ alert immediately on cycle error with short error message
 - [x] Send ⏱ alert on cycle timeout (10 min scrape hang)
+
+## Bug: "Обновлено" shows date of last listing, not last scraper run - FIXED
+- [x] Fixed lastScrapeAt to use MAX(finishedAt) from scrapeLogs WHERE status='success'

@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CAST(isSent AS UNSIGNED)) as sent, SUM(CAST(isNew AS UNSIGNED)) as is_new FROM listings;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT COUNT(*) as total, SUM(CAST(isSent AS UNSIGNED)) as sent, SUM(CAST(isNew AS UNSIGNED)) as is_new FROM listings;",
+  "rows": [
+    {
+      "total": "66",
+      "sent": "66",
+      "is_new": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tsent\tis_new\n66\t66\t0\n",
+  "stderr": "",
+  "execution_time_ms": 382
+}
