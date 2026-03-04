@@ -60,6 +60,7 @@ export async function runMonitoringCycle(): Promise<void> {
     if (errMsg === "SCRAPE_TIMEOUT") {
       console.error("[Scheduler] Cycle TIMED OUT after 10 minutes — forcing reset");
       hourlyStats.cyclesTimedOut += 1;
+      sendStatusMessage(`⏱ <b>Цикл завис</b> — принудительный сброс после 10 минут`).catch(() => {});
     } else {
       console.error("[Scheduler] Cycle error:", err);
       hourlyStats.cyclesErrored += 1;
@@ -70,6 +71,9 @@ export async function runMonitoringCycle(): Promise<void> {
         console.warn("[Scheduler] DB connection lost — resetting pool for next cycle");
         resetDbConnection();
       }
+      // Send immediate Telegram alert (fire-and-forget, don't block)
+      const shortMsg = err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200);
+      sendStatusMessage(`⚠️ <b>Ошибка цикла мониторинга</b>\n\n<code>${shortMsg}</code>`).catch(() => {});
     }
   } finally {
     isRunning = false;

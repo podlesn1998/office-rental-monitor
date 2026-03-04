@@ -274,3 +274,7 @@
 ## Bug: Pool is closed after resetDbConnection (ECONNRESET v2) - FIXED
 - [x] resetDbConnection now immediately creates a new pool instead of calling pool.end()
 - [x] Hourly report error handler also calls resetDbConnection on Pool is closed / ECONNRESET
+
+## Feature: Telegram alert on Cycle error - DONE
+- [x] Send ⚠️ alert immediately on cycle error with short error message
+- [x] Send ⏱ alert on cycle timeout (10 min scrape hang)
