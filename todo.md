@@ -322,3 +322,7 @@
 - [x] Store original listing message_id in pendingComments map
 - [x] After saving comment: edit original Telegram message (editMessageText/editMessageCaption) to append comment line
 - [x] If edit fails (message too old >48h or deleted), silently skip
+
+## Bug: Server hibernates overnight — scheduler stops
+- [x] Add self-ping keep-alive: server pings own /api/health every 5 minutes to prevent hibernation
+- [x] Add /api/cron/run endpoint for external trigger (e.g. cron-job.org)

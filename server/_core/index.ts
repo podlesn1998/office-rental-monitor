@@ -8,7 +8,7 @@ import { registerChatRoutes } from "./chat";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { startScheduler, telegramWebhookHandler, registerTelegramWebhook } from "../scheduler";
+import { startScheduler, runMonitoringCycle, telegramWebhookHandler, registerTelegramWebhook } from "../scheduler";
 import { closeBrowser } from "../scrapers/browser";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -67,6 +67,20 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
+  // Health check endpoint (also used for keep-alive self-ping)
+  app.get("/api/health", (_req, res) => {
+    res.json({ ok: true, ts: Date.now() });
+  });
+
+  // External cron trigger endpoint — call this from cron-job.org or similar every 30 min
+  app.post("/api/cron/run", async (_req, res) => {
+    res.json({ ok: true, message: "Monitoring cycle triggered" });
+    // Run async after responding
+    runMonitoringCycle().catch((err) => {
+      console.error("[Cron] External trigger error:", err);
+    });
+  });
+
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
     // Start the 30-minute monitoring scheduler
@@ -82,6 +96,17 @@ async function startServer() {
         console.warn("[Telegram] Webhook registration failed:", err)
       );
     }
+
+    // Self-ping keep-alive: ping /api/health every 5 minutes to prevent server hibernation
+    const selfPingUrl = `http://localhost:${port}/api/health`;
+    setInterval(async () => {
+      try {
+        await fetch(selfPingUrl, { signal: AbortSignal.timeout(5000) });
+      } catch {
+        // Silently ignore — server may be temporarily busy
+      }
+    }, 5 * 60 * 1000); // every 5 minutes
+    console.log("[KeepAlive] Self-ping started (every 5 minutes)");
   });
 }
 
