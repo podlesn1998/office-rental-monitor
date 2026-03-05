@@ -326,3 +326,8 @@
 ## Bug: Server hibernates overnight — scheduler stops
 - [x] Add self-ping keep-alive: server pings own /api/health every 5 minutes to prevent hibernation
 - [x] Add /api/cron/run endpoint for external trigger (e.g. cron-job.org)
+
+## Bug: Listings above maxPrice being sent (price filter not working)
+- [x] Diagnose which scraper passes wrong price to URL params
+- [x] Add hard post-filter: exclude listings where price > maxPrice or price < minPrice
+- [x] Delete existing over-priced listings from DB

@@ -103,6 +103,21 @@ function applyDistrictFilter(listing: InsertListing, districts: string[]): boole
 }
 
 /**
+ * Apply price filter: exclude listings where price is outside [minPrice, maxPrice].
+ * Listings with null price are kept (price unknown).
+ */
+function applyPriceFilter(
+  listing: InsertListing,
+  minPrice?: number | null,
+  maxPrice?: number | null
+): boolean {
+  if (listing.price == null) return true; // keep if price unknown
+  if (minPrice && listing.price < minPrice) return false;
+  if (maxPrice && listing.price > maxPrice) return false;
+  return true;
+}
+
+/**
  * Apply floor filter.
  */
 function applyFloorFilter(
@@ -233,17 +248,22 @@ export async function runPlatformScrape(platform: Platform): Promise<ScrapeResul
     else if (platform === "avito") scraped = await scrapeAvito(config);
     else if (platform === "yandex") scraped = await scrapeYandex(config);
 
-    // Apply keyword, floor, and district filters
+    // Apply keyword, floor, district, and price filters
     const filtered = scraped.filter(
       (l) =>
         applyKeywordFilter(l, config.keywords) &&
         applyFloorFilter(l, config.minFloor, config.maxFloor) &&
-        applyDistrictFilter(l, config.districts)
+        applyDistrictFilter(l, config.districts) &&
+        applyPriceFilter(l, config.minPrice, config.maxPrice)
     );
 
     if (filtered.length < scraped.length) {
+      const priceFiltered = scraped.filter((l) => !applyPriceFilter(l, config.minPrice, config.maxPrice));
+      if (priceFiltered.length > 0) {
+        console.log(`[Scraper] Filtered ${priceFiltered.length} listings by price (min=${config.minPrice}, max=${config.maxPrice}): ${priceFiltered.map(l => `${l.price}₽`).join(', ')}`);
+      }
       console.log(
-        `[Scraper] Filtered ${scraped.length - filtered.length} listings by keywords/floor/district` +
+        `[Scraper] Filtered ${scraped.length - filtered.length} listings total by keywords/floor/district/price` +
         (config.districts.length > 0 ? ` (districts: ${config.districts.join(", ")})` : "")
       );
     }
