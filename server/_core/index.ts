@@ -97,16 +97,21 @@ async function startServer() {
       );
     }
 
-    // Self-ping keep-alive: ping /api/health every 5 minutes to prevent server hibernation
-    const selfPingUrl = `http://localhost:${port}/api/health`;
+    // Self-ping keep-alive: ping public health endpoint every 2 minutes to prevent hibernation.
+    // Must use the public URL (not localhost) so the platform sees real external traffic.
+    const appIdPrefix2 = (process.env.VITE_APP_ID ?? "").slice(0, 8).toLowerCase();
+    const publicPingUrl = appIdPrefix2
+      ? `https://officerent-${appIdPrefix2}.manus.space/api/health`
+      : `http://localhost:${port}/api/health`;
     setInterval(async () => {
       try {
-        await fetch(selfPingUrl, { signal: AbortSignal.timeout(5000) });
-      } catch {
-        // Silently ignore — server may be temporarily busy
+        const res = await fetch(publicPingUrl, { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) console.warn(`[KeepAlive] Ping returned ${res.status}`);
+      } catch (err) {
+        console.warn(`[KeepAlive] Ping failed: ${err instanceof Error ? err.message : err}`);
       }
-    }, 5 * 60 * 1000); // every 5 minutes
-    console.log("[KeepAlive] Self-ping started (every 5 minutes)");
+    }, 2 * 60 * 1000); // every 2 minutes
+    console.log(`[KeepAlive] Self-ping started every 2 minutes → ${publicPingUrl}`);
   });
 }
 

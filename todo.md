@@ -331,3 +331,8 @@
 - [x] Diagnose which scraper passes wrong price to URL params
 - [x] Add hard post-filter: exclude listings where price > maxPrice or price < minPrice
 - [x] Delete existing over-priced listings from DB
+
+## Bug: Scheduler gaps (1-2h) even after Publish
+- [x] Fix keep-alive to use production URL (not localhost)
+- [x] Increase keep-alive ping frequency to every 2 minutes
+- [ ] Document external cron-job.org setup as reliable fallback
