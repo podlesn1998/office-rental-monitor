@@ -126,16 +126,29 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
       }
 
       // Extract floor: patterns like "1/5 эт.", "этаж 2 из 9", "2 этаж", "1-й этаж"
+      // Yandex title format: "60 м² · офис · 3 этаж из 5C" (letter suffix like C/B for class)
       let floor: number | null = null;
       let totalFloors: number | null = null;
-      // Pattern: "N/M эт." or "этаж N из M" or "N из M эт"
-      const floorSlashMatch = fullText.match(/(\d+)\s*\/\s*(\d+)\s*эт/i)
-        || fullText.match(/этаж\s+(\d+)\s+из\s+(\d+)/i)
-        || fullText.match(/(\d+)\s+из\s+(\d+)\s+эт/i);
-      if (floorSlashMatch) {
-        const f = parseInt(floorSlashMatch[1]);
-        const t = parseInt(floorSlashMatch[2]);
-        if (f >= 1 && f <= 100 && t >= f) { floor = f; totalFloors = t; }
+
+      // First try title — most reliable for Yandex (format: "N этаж из M[A-Z]?")
+      const titleFloorMatch = titleText.match(/(\d+)\s*этаж\s+из\s+(\d+)[A-Z]?/i);
+      if (titleFloorMatch) {
+        const f = parseInt(titleFloorMatch[1]);
+        const t = parseInt(titleFloorMatch[2]);
+        if (f >= 1 && f <= 100 && t >= 1) { floor = f; totalFloors = t; }
+      }
+
+      // Pattern: "N/M эт." or "этаж N из M" or "N из M эт" (with optional letter suffix)
+      if (floor === null) {
+        const floorSlashMatch = fullText.match(/(\d+)\s*\/\s*(\d+)\s*эт/i)
+          || fullText.match(/этаж\s+(\d+)\s+из\s+(\d+)[A-Z]?/i)
+          || fullText.match(/(\d+)\s+этаж\s+из\s+(\d+)[A-Z]?/i)
+          || fullText.match(/(\d+)\s+из\s+(\d+)\s+эт/i);
+        if (floorSlashMatch) {
+          const f = parseInt(floorSlashMatch[1]);
+          const t = parseInt(floorSlashMatch[2]);
+          if (f >= 1 && f <= 100 && t >= 1) { floor = f; if (!totalFloors) totalFloors = t; }
+        }
       }
       // Pattern: "2 этаж" or "2-й этаж" or "этаж 2" (without total)
       if (floor === null) {

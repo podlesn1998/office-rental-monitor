@@ -1,0 +1,20 @@
+{
+  "query": "SELECT floor, totalFloors, COUNT(*) as count FROM listings GROUP BY floor, totalFloors ORDER BY floor LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT floor, totalFloors, COUNT(*) as count FROM listings GROUP BY floor, totalFloors ORDER BY floor LIMIT 20;",
+  "rows": [
+    {
+      "floor": "NULL",
+      "totalFloors": "NULL",
+      "count": "77"
+    },
+    {
+      "floor": "1",
+      "totalFloors": "NULL",
+      "count": "18"
+    }
+  ],
+  "messages": [],
+  "stdout": "floor\ttotalFloors\tcount\nNULL\tNULL\t77\n1\tNULL\t18\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}

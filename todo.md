@@ -354,3 +354,9 @@
 ## Bug: Floor filter reverts to 1 when cleared
 - [x] Fix floor filter input to allow empty/null value when user clears it
 - [x] Fix backend to save null when floor field is empty
+
+## Bug: All listings show 1st floor / floor filter not working correctly
+- [x] Check DB floor values for listings
+- [x] Check scraper floor parsing logic — Yandex title format "N этаж из MC" had letter suffix breaking regex
+- [x] Fix Yandex floor parsing to handle letter suffix (C/B class) and parse from title first
+- [x] Backfill floor values for 63 existing Yandex listings from title
