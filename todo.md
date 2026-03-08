@@ -376,3 +376,4 @@
 - [ ] Re-run rescore after backfill
 - [x] Add tRPC procedure scraper.backfillCeilingHeight to visit detail pages for existing Yandex listings with null ceilingHeight
 - [x] Add "Заполнить высоту потолков" button in Settings page that triggers backfill
+- [x] Fix backfillCeilingHeight procedure error: run as background job with progress polling, use scrape lock to avoid browser conflicts

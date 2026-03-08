@@ -188,14 +188,14 @@ export default function Settings() {
     },
   });
 
+  const { data: backfillProgress, refetch: refetchBackfill } = trpc.scraper.backfillProgress.useQuery(undefined, {
+    refetchInterval: (query) => (query.state.data?.running ? 2000 : false),
+  });
+
   const backfillMutation = trpc.scraper.backfillCeilingHeight.useMutation({
     onSuccess: (res) => {
-      utils.listings.list.invalidate();
-      if (res.total === 0) {
-        toast.success("Все объявления Яндекса уже имеют данные о высоте потолков");
-      } else {
-        toast.success(`Заполнено: ${res.updated} из ${res.total} объявлений Яндекса`);
-      }
+      toast.info(res.message);
+      if (res.started) refetchBackfill();
     },
     onError: () => toast.error("Ошибка при заполнении высоты потолков"),
   });
@@ -844,19 +844,35 @@ export default function Settings() {
         {/* Backfill ceiling height button */}
         <Button
           onClick={() => backfillMutation.mutate()}
-          disabled={backfillMutation.isPending}
+          disabled={backfillMutation.isPending || backfillProgress?.running}
           variant="outline"
           className="w-full h-10 gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
-          {backfillMutation.isPending ? (
+          {(backfillMutation.isPending || backfillProgress?.running) ? (
             <RefreshCw size={14} className="animate-spin" />
           ) : (
             <span>↕</span>
           )}
-          {backfillMutation.isPending
-            ? "Загружаю страницы Яндекса..."
+          {backfillProgress?.running
+            ? `Обработано ${backfillProgress.processed}/${backfillProgress.total}…`
             : "Заполнить высоту потолков (Яндекс)"}
         </Button>
+        {backfillProgress?.running && backfillProgress.total > 0 && (
+          <div className="w-full">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-500"
+                style={{ width: `${Math.round((backfillProgress.processed / backfillProgress.total) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1 text-center">
+              Найдено высот потолков: {backfillProgress.updated}
+            </p>
+          </div>
+        )}
+        {backfillProgress?.error && (
+          <p className="text-[11px] text-red-400 text-center">{backfillProgress.error}</p>
+        )}
 
         {/* Rescore button */}
         <Button

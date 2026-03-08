@@ -21,6 +21,15 @@ import { scrapeProgress } from "./scrapeProgress";
 import { sendPendingListings, sendAllListingsForced, testTelegramConnection } from "./telegram";
 import { registerTelegramWebhook } from "./scheduler";
 
+// Backfill state (in-memory, reset on server restart)
+let backfillState: {
+  running: boolean;
+  total: number;
+  processed: number;
+  updated: number;
+  error: string | null;
+} = { running: false, total: 0, processed: 0, updated: 0, error: null };
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -255,10 +264,18 @@ export const appRouter = router({
         return getScrapeLogs(input.limit);
       }),
 
+    backfillProgress: publicProcedure.query(() => {
+      return backfillState;
+    }),
+
     backfillCeilingHeight: publicProcedure.mutation(async () => {
+      if (backfillState.running) {
+        return { started: false, message: "Бэкфилл уже запущен" };
+      }
+
       // Find all Yandex listings with null ceilingHeight
       const db = await (await import("./db")).getDb();
-      if (!db) return { updated: 0, total: 0 };
+      if (!db) return { started: false, message: "DB недоступна" };
       const { listings: listingsTable } = await import("../drizzle/schema");
       const { and, eq, isNull } = await import("drizzle-orm");
 
@@ -266,96 +283,86 @@ export const appRouter = router({
         .select({ id: listingsTable.id, url: listingsTable.url, description: listingsTable.description })
         .from(listingsTable)
         .where(and(eq(listingsTable.platform, "yandex"), isNull(listingsTable.ceilingHeight)))
-        .limit(50); // process up to 50 at a time to avoid timeout
+        .limit(50);
 
-      if (targets.length === 0) return { updated: 0, total: 0 };
+      if (targets.length === 0) {
+        return { started: false, message: "Все объявления Яндекса уже имеют данные" };
+      }
 
-      console.log(`[Backfill] Starting ceiling height backfill for ${targets.length} Yandex listings`);
+      // Start background job
+      backfillState = { running: true, total: targets.length, processed: 0, updated: 0, error: null };
+      console.log(`[Backfill] Queuing ${targets.length} Yandex listings for ceiling height backfill`);
 
-      const { createStealthPage } = await import("./scrapers/browser");
-      const { page: _mainPage, context } = await createStealthPage();
-      const detailPage = await context.newPage();
-      let updated = 0;
-
-      try {
-        for (const target of targets) {
-          if (!target.url) continue;
+      // Run in background (fire-and-forget)
+      (async () => {
+        try {
+          const { createStealthPage, acquireScrapeLock, releaseScrapeLock } = await import("./scrapers/browser");
+          const gotLock = await acquireScrapeLock(300000);
+          if (!gotLock) {
+            backfillState = { ...backfillState, running: false, error: "Скрапер занят, попробуйте позже" };
+            return;
+          }
+          const { page: _p, context } = await createStealthPage();
+          const detailPage = await context.newPage();
           try {
-            await detailPage.goto(target.url, { waitUntil: "domcontentloaded", timeout: 25000 });
-            await detailPage.waitForTimeout(2000);
-
-            // Click expand button if present
-            try {
-              const allBtns = await detailPage.$$('span[role="button"]');
-              for (const btn of allBtns) {
-                const t = await btn.textContent();
-                if (t && t.includes("характеристик")) {
-                  await btn.click();
-                  await detailPage.waitForTimeout(800);
-                  break;
+            for (const target of targets) {
+              if (!target.url) { backfillState = { ...backfillState, processed: backfillState.processed + 1 }; continue; }
+              try {
+                await detailPage.goto(target.url, { waitUntil: "domcontentloaded", timeout: 25000 });
+                await detailPage.waitForTimeout(2000);
+                try {
+                  const allBtns = await detailPage.$$('span[role="button"]');
+                  for (const btn of allBtns) {
+                    const t = await btn.textContent();
+                    if (t && t.includes("характеристик")) { await btn.click(); await detailPage.waitForTimeout(800); break; }
+                  }
+                } catch { /* ignore */ }
+                const result = await detailPage.evaluate(() => {
+                  const text = document.body.innerText;
+                  let ceilingHeight: number | null = null;
+                  const ceilMatch = text.match(/Высота потолков[:\s]+([\d,\.]+)\s*м/i);
+                  if (ceilMatch) { const val = parseFloat(ceilMatch[1].replace(",", ".")); if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100); }
+                  let entranceSeparate = false;
+                  const em = text.match(/Вход[:\s]+([^\n]+)/i);
+                  if (em) entranceSeparate = em[1].trim().toLowerCase().includes("отдельн");
+                  if (!entranceSeparate && /отдельн[ыйого]+\s+вход/i.test(text)) entranceSeparate = true;
+                  return { ceilingHeight, entranceSeparate };
+                });
+                if (result.ceilingHeight !== null || result.entranceSeparate) {
+                  const updateData: Record<string, unknown> = {};
+                  if (result.ceilingHeight !== null) updateData.ceilingHeight = result.ceilingHeight;
+                  if (result.entranceSeparate && !target.description?.includes("отдельный вход")) updateData.description = "отдельный вход";
+                  await db.update(listingsTable).set(updateData).where(eq(listingsTable.id, target.id));
+                  backfillState = { ...backfillState, updated: backfillState.updated + 1 };
+                  console.log(`[Backfill] Updated ${target.id}: ceiling=${result.ceilingHeight}cm entrance=${result.entranceSeparate}`);
                 }
+              } catch (err) {
+                console.warn(`[Backfill] Failed for ${target.id}:`, err instanceof Error ? err.message : err);
               }
-            } catch { /* ignore */ }
-
-            const result = await detailPage.evaluate(() => {
-              const text = document.body.innerText;
-              let ceilingHeight: number | null = null;
-              const ceilMatch = text.match(/Высота потолков[:\s]+([\d,\.]+)\s*м/i);
-              if (ceilMatch) {
-                const val = parseFloat(ceilMatch[1].replace(",", "."));
-                if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
-              }
-              let entranceSeparate = false;
-              const entranceMatch = text.match(/Вход[:\s]+([^\n]+)/i);
-              if (entranceMatch) {
-                entranceSeparate = entranceMatch[1].trim().toLowerCase().includes("отдельн");
-              }
-              if (!entranceSeparate && /отдельн[ыйого]+\s+вход/i.test(text)) {
-                entranceSeparate = true;
-              }
-              return { ceilingHeight, entranceSeparate };
-            });
-
-            if (result.ceilingHeight !== null || result.entranceSeparate) {
-              const updateData: Record<string, unknown> = {};
-              if (result.ceilingHeight !== null) updateData.ceilingHeight = result.ceilingHeight;
-              if (result.entranceSeparate && !target.description?.includes("отдельный вход")) {
-                updateData.description = "отдельный вход";
-              }
-              const { computeScore } = await import("./utils/scoreListing");
-              // We'll rescore after update
-              await db.update(listingsTable).set(updateData).where(eq(listingsTable.id, target.id));
-              updated++;
-              console.log(`[Backfill] Updated listing ${target.id}: ceiling=${result.ceilingHeight}cm entrance=${result.entranceSeparate}`);
+              backfillState = { ...backfillState, processed: backfillState.processed + 1 };
+              await detailPage.waitForTimeout(1500);
             }
-          } catch (err) {
-            console.warn(`[Backfill] Failed for listing ${target.id}:`, err instanceof Error ? err.message : err);
+          } finally {
+            await context.close();
+            releaseScrapeLock();
           }
-          await detailPage.waitForTimeout(1500);
-        }
-      } finally {
-        await context.close();
-      }
-
-      // Rescore all updated listings
-      if (updated > 0) {
-        const allListings = await db.select().from(listingsTable);
-        const { computeScore } = await import("./utils/scoreListing");
-        for (const row of allListings) {
-          const score = computeScore({
-            floor: row.floor,
-            totalFloors: row.totalFloors,
-            ceilingHeight: row.ceilingHeight as number | null | undefined,
-            title: row.title,
-            description: row.description,
-          });
-          if (score !== row.score) {
-            await db.update(listingsTable).set({ score }).where(eq(listingsTable.id, row.id));
+          // Rescore
+          const allListings = await db.select().from(listingsTable);
+          const { computeScore } = await import("./utils/scoreListing");
+          for (const row of allListings) {
+            const score = computeScore({ floor: row.floor, totalFloors: row.totalFloors, ceilingHeight: row.ceilingHeight as number | null | undefined, title: row.title, description: row.description });
+            if (score !== row.score) await db.update(listingsTable).set({ score }).where(eq(listingsTable.id, row.id));
           }
+          backfillState = { ...backfillState, running: false };
+          console.log(`[Backfill] Done: updated=${backfillState.updated}/${backfillState.total}`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[Backfill] Fatal error:", msg);
+          backfillState = { ...backfillState, running: false, error: msg };
         }
-      }
+      })();
 
-      return { updated, total: targets.length };
+      return { started: true, message: `Запущен бэкфилл для ${targets.length} объявлений` };
     }),
   }),
 });
