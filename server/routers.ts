@@ -309,37 +309,40 @@ export const appRouter = router({
         let ceilingHeight: number | null = null;
         let entranceSeparate = false;
 
-        // Try __NEXT_DATA__ JSON first (most reliable)
+        // Normalize ceiling height: accept 2-6m or 200-600cm, reject outliers
+        const normalizeCeiling = (val: number): number | null => {
+          if (val >= 200 && val <= 600) return Math.round(val); // already in cm
+          if (val >= 2 && val <= 6) return Math.round(val * 100); // in meters
+          return null;
+        };
+
+        // Try __NEXT_DATA__ JSON first
         const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
         if (nextDataMatch) {
           try {
             const json = JSON.parse(nextDataMatch[1]);
             const jsonStr = JSON.stringify(json);
-            // Look for ceilingHeight in JSON
             const ceilJsonMatch = jsonStr.match(/"ceilingHeight"\s*:\s*([\d.]+)/);
-            if (ceilJsonMatch) {
-              const val = parseFloat(ceilJsonMatch[1]);
-              // Value could be in meters (2.8) or cm (280)
-              if (val >= 200 && val <= 1000) ceilingHeight = Math.round(val);
-              else if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
-            }
-            // Look for entrance type
+            if (ceilJsonMatch) ceilingHeight = normalizeCeiling(parseFloat(ceilJsonMatch[1]));
             if (/"entranceType"\s*:\s*"SEPARATE"/i.test(jsonStr) || /"SEPARATE_ENTRANCE"/i.test(jsonStr)) {
               entranceSeparate = true;
             }
-          } catch { /* ignore JSON parse errors */ }
+          } catch { /* ignore */ }
         }
 
-        // Fallback: regex on raw HTML text
+        // Fallback: search directly in raw HTML (works for ROUTER_SNAPSHOT pages)
+        if (ceilingHeight === null) {
+          const ceilJsonMatch = html.match(/"ceilingHeight"\s*:\s*([\d.]+)/);
+          if (ceilJsonMatch) ceilingHeight = normalizeCeiling(parseFloat(ceilJsonMatch[1]));
+        }
+
+        // Fallback: human-readable text
         if (ceilingHeight === null) {
           const textMatch = html.match(/Высота потолков[^<]{0,30}([\d,\.]+)\s*[мm]/i);
-          if (textMatch) {
-            const val = parseFloat(textMatch[1].replace(",", "."));
-            if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
-          }
+          if (textMatch) ceilingHeight = normalizeCeiling(parseFloat(textMatch[1].replace(",", ".")));
         }
         if (!entranceSeparate) {
-          entranceSeparate = /отдельн[ыйого\s]+вход/i.test(html) || /"SEPARATE"/i.test(html);
+          entranceSeparate = /отдельн[ыйого\s]+вход/i.test(html);
         }
 
         return { ceilingHeight, entranceSeparate };

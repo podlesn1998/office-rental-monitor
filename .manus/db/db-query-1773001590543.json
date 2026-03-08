@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, platformId, url, ceilingHeight, score FROM listings WHERE platformId = '4290799603150684389';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platformId, url, ceilingHeight, score FROM listings WHERE platformId = '4290799603150684389';",
+  "rows": [
+    {
+      "id": "120006",
+      "platformId": "4290799603150684389",
+      "url": "https://realty.yandex.ru/offer/4290799603150684389/",
+      "ceilingHeight": "900",
+      "score": "100"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatformId\turl\tceilingHeight\tscore\n120006\t4290799603150684389\thttps://realty.yandex.ru/offer/4290799603150684389/\t900\t100\n",
+  "stderr": "",
+  "execution_time_ms": 354
+}

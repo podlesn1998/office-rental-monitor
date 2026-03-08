@@ -379,3 +379,5 @@
 - [x] Fix backfillCeilingHeight procedure error: run as background job with progress polling, use scrape lock to avoid browser conflicts
 - [x] Fix publish/build error: fixed TypeScript errors in Markdown.tsx (removed plugins prop), AIChatBox.tsx (UIMessagePart type args, mode typewriter→streaming), ComponentShowcase.tsx (removed height prop, added required chatId/initialMessages)
 - [x] Fix backfillCeilingHeight: replace Playwright with HTTP fetch (Playwright not available in production)
+- [x] Debug/fix ceiling height parsing for Yandex listing 4290799603150684389: parsing works correctly, added ROUTER_SNAPSHOT fallback
+- [x] Fix ceiling height validation: cap at 600cm max, reject outliers like 900cm
