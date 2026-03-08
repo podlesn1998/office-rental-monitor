@@ -346,3 +346,7 @@
 - [x] Diagnose Yandex district parsing (check how district is extracted)
 - [x] Fix district extraction to use address-based geocoding or stricter matching
 - [x] Delete wrongly saved listings from DB
+
+## Feature: Delete comment prompt and confirmation messages from Telegram chat
+- [x] Store prompt message_id in pendingComments when asking for comment
+- [x] Delete prompt message and confirmation message after comment is saved

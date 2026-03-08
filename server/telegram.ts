@@ -755,7 +755,10 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
       if (pending.promptMessageId) {
         await deleteMessage(botToken, chatId, pending.promptMessageId);
       }
-      await sendTelegramMessage(botToken, chatId, "⏭ Комментарий пропущен.");
+      const skipMsgId = await sendTelegramMessageWithId(botToken, chatId, "⏭ Комментарий пропущен.");
+      if (skipMsgId) {
+        setTimeout(() => deleteMessage(botToken, chatId, skipMsgId), 3000);
+      }
       return;
     }
 
@@ -786,7 +789,11 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
       }
     }
 
-    await sendTelegramMessage(botToken, chatId, `✅ Комментарий сохранён:\n<i>${comment}</i>`);
+    // Send confirmation then delete it after a short delay
+    const confirmMsgId = await sendTelegramMessageWithId(botToken, chatId, `✅ Комментарий сохранён:\n<i>${comment}</i>`);
+    if (confirmMsgId) {
+      setTimeout(() => deleteMessage(botToken, chatId, confirmMsgId), 3000);
+    }
     return;
   }
 
