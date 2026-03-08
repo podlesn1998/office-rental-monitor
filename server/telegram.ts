@@ -735,6 +735,7 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
 
   const chatId = String((message.chat as Record<string, unknown>)?.id ?? "");
   const text = String(message.text ?? "");
+  const userMessageId = Number(message.message_id ?? 0) || null;
   const db = await getDb();
 
   if (!db) return;
@@ -767,9 +768,12 @@ export async function handleTelegramUpdate(update: Record<string, unknown>): Pro
     await updateListingComment(pending.listingId, comment);
     pendingComments.delete(chatId);
 
-    // Delete the prompt message
+    // Delete the prompt message and the user's own comment message
     if (pending.promptMessageId) {
       await deleteMessage(botToken, chatId, pending.promptMessageId);
+    }
+    if (userMessageId) {
+      await deleteMessage(botToken, chatId, userMessageId);
     }
 
     // Edit the original listing card to append the comment
