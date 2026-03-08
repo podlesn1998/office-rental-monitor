@@ -341,3 +341,8 @@
 - [x] Diagnose CIAN area parsing (check selector and regex)
 - [x] Add hard post-filter by area (minArea/maxArea) in scraper pipeline
 - [x] Delete wrongly saved listings from DB
+
+## Bug: Yandex district parsing wrong — listings from wrong districts pass filter
+- [x] Diagnose Yandex district parsing (check how district is extracted)
+- [x] Fix district extraction to use address-based geocoding or stricter matching
+- [x] Delete wrongly saved listings from DB
