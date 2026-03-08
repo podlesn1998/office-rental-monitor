@@ -389,3 +389,4 @@
 - [x] Add score breakdown tooltip on listing card score badge (floor/entrance/ceiling/area breakdown)
 - [x] Add ceiling height filter on main page (≥2.7m / ≥3m)
 - [x] Add area filter on main page (30-60m² only)
+- [x] Rebalance scoring: ceiling weight 20→35, entrance weight 30→15 (ceiling > entrance)

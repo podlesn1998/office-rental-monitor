@@ -93,22 +93,22 @@ function computeScoreBreakdown(listing: ListingItem): { label: string; pts: numb
   const haystack = `${listing.title ?? ""} ${(listing as any).description ?? ""}`.toLowerCase();
   const hasEntrance = ENTRANCE_KW.some((kw) => haystack.includes(kw));
   if (hasEntrance) {
-    breakdown.push({ label: "Отдельный вход — есть", pts: 30, max: 30, icon: "🚪" });
+    breakdown.push({ label: "Отдельный вход — есть", pts: 15, max: 15, icon: "🚪" });
   } else if (haystack.includes("вход")) {
-    breakdown.push({ label: "Вход упоминается", pts: 4, max: 30, icon: "🚪" });
+    breakdown.push({ label: "Вход упоминается", pts: 3, max: 15, icon: "🚪" });
   } else {
-    breakdown.push({ label: "Отд. вход не указан", pts: 0, max: 30, icon: "🚪" });
+    breakdown.push({ label: "Отд. вход не указан", pts: 0, max: 15, icon: "🚪" });
   }
 
   // Ceiling
   if (listing.ceilingHeight == null) {
-    breakdown.push({ label: "Потолок не указан", pts: 5, max: 20, icon: "↕️" });
+    breakdown.push({ label: "Потолок не указан", pts: 12, max: 35, icon: "↕️" });
   } else {
     const h = listing.ceilingHeight / 100;
-    if (h >= 3.5) breakdown.push({ label: `Потолок ${h.toFixed(1)} м — идеально`, pts: 20, max: 20, icon: "↕️" });
-    else if (h >= 3.0) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 12, max: 20, icon: "↕️" });
-    else if (h >= 2.7) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 5, max: 20, icon: "↕️" });
-    else breakdown.push({ label: `Потолок ${h.toFixed(1)} м — низко`, pts: 0, max: 20, icon: "↕️" });
+    if (h >= 3.5) breakdown.push({ label: `Потолок ${h.toFixed(1)} м — идеально`, pts: 35, max: 35, icon: "↕️" });
+    else if (h >= 3.0) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 21, max: 35, icon: "↕️" });
+    else if (h >= 2.7) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 9, max: 35, icon: "↕️" });
+    else breakdown.push({ label: `Потолок ${h.toFixed(1)} м — низко`, pts: 0, max: 35, icon: "↕️" });
   }
 
   // Area
