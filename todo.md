@@ -360,3 +360,6 @@
 - [x] Check scraper floor parsing logic — Yandex title format "N этаж из MC" had letter suffix breaking regex
 - [x] Fix Yandex floor parsing to handle letter suffix (C/B class) and parse from title first
 - [x] Backfill floor values for 63 existing Yandex listings from title
+
+## Bug: Hourly report sent twice after server restart
+- [x] Align hourly report to clock hour boundary (e.g. 19:00, 20:00) instead of 1h after server start

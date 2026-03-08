@@ -167,10 +167,21 @@ export function startScheduler(): void {
     await runMonitoringCycle();
   }, INTERVAL_MS);
 
-  // Hourly report — first report after 1 hour, then every hour
-  hourlyReportInterval = setInterval(async () => {
-    await sendHourlyReport();
-  }, 60 * 60 * 1000); // every 60 minutes
+  // Hourly report — aligned to clock hour boundary (e.g. 19:00, 20:00)
+  // This prevents double-sends when server restarts mid-hour
+  const now = new Date();
+  const msUntilNextHour =
+    (60 - now.getMinutes()) * 60 * 1000 -
+    now.getSeconds() * 1000 -
+    now.getMilliseconds();
+  const minUntilNextHour = Math.round(msUntilNextHour / 60000);
+  console.log(`[Scheduler] Hourly report aligned to clock hour — first report in ${minUntilNextHour} min.`);
+  setTimeout(() => {
+    sendHourlyReport().catch(console.error);
+    hourlyReportInterval = setInterval(async () => {
+      await sendHourlyReport();
+    }, 60 * 60 * 1000);
+  }, msUntilNextHour);
 
   console.log(`[Scheduler] Scheduler started. First run in 2 minutes, then every 30 minutes. Hourly reports enabled.`);
 }
