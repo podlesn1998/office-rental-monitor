@@ -1,0 +1,91 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'listings' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'listings' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "platform"
+    },
+    {
+      "COLUMN_NAME": "platformId"
+    },
+    {
+      "COLUMN_NAME": "title"
+    },
+    {
+      "COLUMN_NAME": "address"
+    },
+    {
+      "COLUMN_NAME": "district"
+    },
+    {
+      "COLUMN_NAME": "metroStation"
+    },
+    {
+      "COLUMN_NAME": "metroDistanceMin"
+    },
+    {
+      "COLUMN_NAME": "metroDistanceType"
+    },
+    {
+      "COLUMN_NAME": "price"
+    },
+    {
+      "COLUMN_NAME": "area"
+    },
+    {
+      "COLUMN_NAME": "floor"
+    },
+    {
+      "COLUMN_NAME": "totalFloors"
+    },
+    {
+      "COLUMN_NAME": "description"
+    },
+    {
+      "COLUMN_NAME": "photos"
+    },
+    {
+      "COLUMN_NAME": "url"
+    },
+    {
+      "COLUMN_NAME": "phone"
+    },
+    {
+      "COLUMN_NAME": "isNew"
+    },
+    {
+      "COLUMN_NAME": "isSent"
+    },
+    {
+      "COLUMN_NAME": "firstSeen"
+    },
+    {
+      "COLUMN_NAME": "lastSeen"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "ceilingHeight"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "telegramMessageId"
+    },
+    {
+      "COLUMN_NAME": "score"
+    },
+    {
+      "COLUMN_NAME": "comment"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nplatform\nplatformId\ntitle\naddress\ndistrict\nmetroStation\nmetroDistanceMin\nmetroDistanceType\nprice\narea\nfloor\ntotalFloors\ndescription\nphotos\nurl\nphone\nisNew\nisSent\nfirstSeen\nlastSeen\ncreatedAt\nceilingHeight\nstatus\ntelegramMessageId\nscore\ncomment\n",
+  "stderr": "",
+  "execution_time_ms": 372
+}

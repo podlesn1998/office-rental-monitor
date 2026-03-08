@@ -1,0 +1,25 @@
+{
+  "query": "SELECT url FROM listings WHERE platform = 'yandex' AND url IS NOT NULL LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT url FROM listings WHERE platform = 'yandex' AND url IS NOT NULL LIMIT 5;",
+  "rows": [
+    {
+      "url": "https://realty.yandex.ru/offer/7177414668513149696/"
+    },
+    {
+      "url": "https://realty.yandex.ru/offer/3097802952063684352/"
+    },
+    {
+      "url": "https://realty.yandex.ru/offer/6436594438428452864/"
+    },
+    {
+      "url": "https://realty.yandex.ru/offer/8974698334075712004/"
+    },
+    {
+      "url": "https://realty.yandex.ru/offer/3962829511061893006/"
+    }
+  ],
+  "messages": [],
+  "stdout": "url\nhttps://realty.yandex.ru/offer/7177414668513149696/\nhttps://realty.yandex.ru/offer/3097802952063684352/\nhttps://realty.yandex.ru/offer/6436594438428452864/\nhttps://realty.yandex.ru/offer/8974698334075712004/\nhttps://realty.yandex.ru/offer/3962829511061893006/\n",
+  "stderr": "",
+  "execution_time_ms": 373
+}

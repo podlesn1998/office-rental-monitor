@@ -188,6 +188,18 @@ export default function Settings() {
     },
   });
 
+  const backfillMutation = trpc.scraper.backfillCeilingHeight.useMutation({
+    onSuccess: (res) => {
+      utils.listings.list.invalidate();
+      if (res.total === 0) {
+        toast.success("Все объявления Яндекса уже имеют данные о высоте потолков");
+      } else {
+        toast.success(`Заполнено: ${res.updated} из ${res.total} объявлений Яндекса`);
+      }
+    },
+    onError: () => toast.error("Ошибка при заполнении высоты потолков"),
+  });
+
   const rescoreMutation = trpc.listings_rescore.all.useMutation({
     onSuccess: (res) => {
       utils.listings.list.invalidate();
@@ -827,6 +839,23 @@ export default function Settings() {
             : (triggerMutation.isPending || isScraping)
             ? "Запускаю поиск..."
             : "Сохранить и обновить выдачу"}
+        </Button>
+
+        {/* Backfill ceiling height button */}
+        <Button
+          onClick={() => backfillMutation.mutate()}
+          disabled={backfillMutation.isPending}
+          variant="outline"
+          className="w-full h-10 gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          {backfillMutation.isPending ? (
+            <RefreshCw size={14} className="animate-spin" />
+          ) : (
+            <span>↕</span>
+          )}
+          {backfillMutation.isPending
+            ? "Загружаю страницы Яндекса..."
+            : "Заполнить высоту потолков (Яндекс)"}
         </Button>
 
         {/* Rescore button */}

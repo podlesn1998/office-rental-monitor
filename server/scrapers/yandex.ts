@@ -167,10 +167,88 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
   });
 }
 
+/**
+ * Visit a single Yandex offer page and extract extra data from the О доме section.
+ * Returns partial data: ceilingHeight (cm), entranceSeparate (bool).
+ */
+async function fetchYandexOfferDetails(
+  page: import("playwright-core").Page,
+  url: string
+): Promise<{ ceilingHeight: number | null; entranceSeparate: boolean }> {
+  try {
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
+    // Wait briefly for React to render characteristics
+    await page.waitForTimeout(2000);
+
+    // Click "ещё N характеристик" if present to expand О доме section
+    try {
+      const expandBtn = await page.$('span[role="button"], button');
+      if (expandBtn) {
+        const btnText = await expandBtn.textContent();
+        if (btnText && btnText.includes("характеристик")) {
+          await expandBtn.click();
+          await page.waitForTimeout(1000);
+        }
+      }
+      // Try all buttons/spans that say "ещё N характеристик"
+      const allBtns = await page.$$('span[role="button"]');
+      for (const btn of allBtns) {
+        const t = await btn.textContent();
+        if (t && t.includes("характеристик")) {
+          await btn.click();
+          await page.waitForTimeout(800);
+          break;
+        }
+      }
+    } catch {
+      // ignore expand errors
+    }
+
+    const result = await page.evaluate(() => {
+      const text = document.body.innerText;
+
+      // Extract ceiling height: "Высота потолков 2,8 м" or "Высота потолков: 2.8 м"
+      let ceilingHeight: number | null = null;
+      const ceilMatch = text.match(/Высота потолков[:\s]+([\d,\.]+)\s*м/i);
+      if (ceilMatch) {
+        const val = parseFloat(ceilMatch[1].replace(",", "."));
+        if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
+      }
+
+      // Extract entrance type: "Вход Отдельный" or "Вход: Отдельный"
+      let entranceSeparate = false;
+      const entranceMatch = text.match(/Вход[:\s]+([^\n]+)/i);
+      if (entranceMatch) {
+        const entranceVal = entranceMatch[1].trim().toLowerCase();
+        entranceSeparate = entranceVal.includes("отдельн") || entranceVal.includes("separate");
+      }
+      // Also check if "отдельный вход" is mentioned anywhere in the text
+      if (!entranceSeparate && /отдельн[ыйого]+\s+вход/i.test(text)) {
+        entranceSeparate = true;
+      }
+
+      return { ceilingHeight, entranceSeparate };
+    });
+
+    return result;
+  } catch (err) {
+    console.warn(`[Yandex] Detail fetch failed for ${url}:`, err instanceof Error ? err.message : err);
+    return { ceilingHeight: null, entranceSeparate: false };
+  }
+}
+
 export async function scrapeYandex(params: SearchParams): Promise<InsertListing[]> {
   const results: InsertListing[] = [];
   const { page, context } = await createStealthPage();
   const maxPages = params.maxPages ?? 2;
+
+  // Separate page for detail fetching (reuse same context)
+  let detailPage: import("playwright-core").Page | null = null;
+  try {
+    detailPage = await context.newPage();
+  } catch {
+    // detail page creation failed, will skip detail fetching
+  }
 
   try {
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
@@ -220,10 +298,35 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
       const existingIds = new Set(results.map((r) => r.platformId));
       for (const card of cards) {
         if (existingIds.has(card.id)) continue;
+
+        // Fetch detail page to get ceiling height from О доме section
+        let detailCeilingHeight = card.ceilingHeight;
+        let detailEntranceSeparate = false;
+        if (detailPage && card.href) {
+          try {
+            const details = await fetchYandexOfferDetails(detailPage, card.href);
+            if (details.ceilingHeight !== null) detailCeilingHeight = details.ceilingHeight;
+            detailEntranceSeparate = details.entranceSeparate;
+            if (details.ceilingHeight !== null || details.entranceSeparate) {
+              console.log(`[Yandex] Detail for ${card.id}: ceiling=${details.ceilingHeight}cm entrance_separate=${details.entranceSeparate}`);
+            }
+          } catch (detailErr) {
+            console.warn(`[Yandex] Detail fetch error for ${card.id}:`, detailErr instanceof Error ? detailErr.message : detailErr);
+          }
+          // Small delay to avoid rate limiting
+          await detailPage.waitForTimeout(1500);
+        }
+
+        // Build title with entrance info if found on detail page
+        let titleWithEntrance = card.title || null;
+        if (detailEntranceSeparate && titleWithEntrance && !titleWithEntrance.toLowerCase().includes('отдельн')) {
+          // We'll store this info in description for scoring purposes
+        }
+
         results.push({
           platform: "yandex",
           platformId: card.id,
-          title: card.title || null,
+          title: titleWithEntrance,
           address: card.address || null,
           district: guessDistrict(card.address),
           metroStation: card.metro || null,
@@ -233,8 +336,8 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
           area: card.area ? Math.round(card.area) : null,
           floor: card.floor ?? null,
           totalFloors: card.totalFloors ?? null,
-          ceilingHeight: card.ceilingHeight ?? null,
-          description: null,
+          ceilingHeight: detailCeilingHeight ?? null,
+          description: detailEntranceSeparate ? 'отдельный вход' : null,
           photos: [],
           url: card.href,
           phone: null,
@@ -254,6 +357,7 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
   } finally {
     await context.close();
   }
+  // detailPage is closed with context
 
   // Filter by selected districts if any are specified
   if (params.districts && params.districts.length > 0) {

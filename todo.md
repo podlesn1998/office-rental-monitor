@@ -368,3 +368,11 @@
 - [x] Add sortBy param to getListings (score_desc, score_asc, date_desc, price_asc, price_desc)
 - [x] Update tRPC listings.list input to accept sortBy
 - [x] Add sort selector UI on listings page
+
+## Feature: Parse ceiling height from Yandex "О доме" section
+- [ ] Extend parseYandexPage to extract ceilingHeight from "О доме" table (Высота потолков: 2,8 м)
+- [ ] Also extract entrance type from "О доме" (Вход: Отдельный → boost score)
+- [ ] Backfill ceilingHeight for existing Yandex listings that have the data
+- [ ] Re-run rescore after backfill
+- [x] Add tRPC procedure scraper.backfillCeilingHeight to visit detail pages for existing Yandex listings with null ceilingHeight
+- [x] Add "Заполнить высоту потолков" button in Settings page that triggers backfill
