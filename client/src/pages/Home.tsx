@@ -424,7 +424,11 @@ export default function Home() {
     { platform, status: statusFilter, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset },
     { refetchInterval: 120000 }
   );
-  const { data: stats } = trpc.listings.stats.useQuery(undefined, { refetchInterval: 60000 });
+  // stats now come from the listings query (filter-aware)
+  const filteredStats = data
+    ? { total: data.total, cian: data.cian, avito: data.avito, yandex: data.yandex }
+    : null;
+  const { data: globalStats } = trpc.listings.stats.useQuery(undefined, { refetchInterval: 60000 });
 
   // Poll scrape progress while running
   const { data: progress } = trpc.scraper.progress.useQuery(undefined, {
@@ -440,7 +444,8 @@ export default function Home() {
     onSuccess: (res) => {
       toast.success(`Готово! Найдено: ${res.found}, новых: ${res.newCount}`);
       refetch();
-      utils.listings.stats.invalidate();
+            utils.listings.stats.invalidate();
+            utils.listings.list.invalidate();
       utils.scraper.progress.invalidate();
       setIsScraping(false);
     },
@@ -468,8 +473,8 @@ export default function Home() {
             <Building2 size={20} className="text-primary" />
             <div>
               <span className="font-semibold text-foreground">Офисы СПб</span>
-              {stats && (
-                <span className="text-xs text-muted-foreground ml-2">{stats.total} объявл.</span>
+              {(filteredStats ?? globalStats) && (
+                <span className="text-xs text-muted-foreground ml-2">{(filteredStats ?? globalStats)!.total} объявл.</span>
               )}
               {/* Progress indicator while scraping */}
               {progress?.isRunning ? (
@@ -502,10 +507,10 @@ export default function Home() {
                     );
                   })}
                 </div>
-              ) : stats?.lastScrapeAt ? (
+              ) : globalStats?.lastScrapeAt ? (
                 <div className="text-[10px] text-muted-foreground/60 flex items-center gap-1 mt-0.5">
                   <Clock size={9} />
-                  <span>Обновлено {new Date(stats.lastScrapeAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                  <span>Обновлено {new Date(globalStats!.lastScrapeAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
               ) : null}
             </div>
@@ -524,13 +529,13 @@ export default function Home() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4">
-        {stats && (
+        {(filteredStats ?? globalStats) && (
           <div className="grid grid-cols-4 gap-2 mb-4">
             {[
-              { label: "Всего", value: stats.total, color: "text-foreground" },
-              { label: "ЦИАН", value: stats.cian, color: "text-[oklch(0.75_0.2_220)]" },
-              { label: "Авито", value: stats.avito, color: "text-[oklch(0.75_0.2_145)]" },
-              { label: "Яндекс", value: stats.yandex, color: "text-[oklch(0.8_0.22_25)]" },
+              { label: "Всего", value: (filteredStats ?? globalStats)!.total, color: "text-foreground" },
+              { label: "ЦИАН", value: (filteredStats ?? globalStats)!.cian, color: "text-[oklch(0.75_0.2_220)]" },
+              { label: "Авито", value: (filteredStats ?? globalStats)!.avito, color: "text-[oklch(0.75_0.2_145)]" },
+              { label: "Яндекс", value: (filteredStats ?? globalStats)!.yandex, color: "text-[oklch(0.8_0.22_25)]" },
             ].map((s) => (
               <div key={s.label} className="bg-card rounded-xl p-2.5 text-center border border-border">
                 <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>

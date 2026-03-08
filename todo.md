@@ -390,3 +390,4 @@
 - [x] Add ceiling height filter on main page (≥2.7m / ≥3m)
 - [x] Add area filter on main page (30-60m² only)
 - [x] Rebalance scoring: ceiling weight 20→35, entrance weight 30→15 (ceiling > entrance)
+- [x] Make top stats counters (total/CIAN/Yandex/Avito) respect active filters (status, platform, ceiling, area, sortBy)

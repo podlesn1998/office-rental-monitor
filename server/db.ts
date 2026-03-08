@@ -119,7 +119,7 @@ export async function getListings(opts: {
   offset?: number;
 }) {
   const db = await getDb();
-  if (!db) return { items: [], total: 0 };
+  if (!db) return { items: [], total: 0, cian: 0, avito: 0, yandex: 0 };
 
   const conditions = [];
   if (opts.platform) conditions.push(eq(listings.platform, opts.platform));
@@ -156,7 +156,7 @@ export async function getListings(opts: {
     orderClause = [desc(listings.score), desc(listings.firstSeen)];
   }
 
-  const [items, countResult] = await Promise.all([
+  const [items, countResult, platformCounts] = await Promise.all([
     db
       .select()
       .from(listings)
@@ -168,6 +168,11 @@ export async function getListings(opts: {
       .select({ count: sql<number>`count(*)` })
       .from(listings)
       .where(where),
+    db
+      .select({ platform: listings.platform, count: sql<number>`count(*)` })
+      .from(listings)
+      .where(where)
+      .groupBy(listings.platform),
   ]);
 
   // Attach score breakdown to each item
@@ -184,7 +189,18 @@ export async function getListings(opts: {
     }),
   }));
 
-  return { items: itemsWithBreakdown, total: Number(countResult[0]?.count ?? 0) };
+  const byPlatform: Record<string, number> = {};
+  for (const row of platformCounts) {
+    byPlatform[row.platform] = Number(row.count);
+  }
+
+  return {
+    items: itemsWithBreakdown,
+    total: Number(countResult[0]?.count ?? 0),
+    cian: byPlatform["cian"] ?? 0,
+    avito: byPlatform["avito"] ?? 0,
+    yandex: byPlatform["yandex"] ?? 0,
+  };
 }
 
 export async function getListingStats() {
