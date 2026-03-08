@@ -277,16 +277,20 @@ export const appRouter = router({
       const db = await (await import("./db")).getDb();
       if (!db) return { started: false, message: "DB недоступна" };
       const { listings: listingsTable } = await import("../drizzle/schema");
-      const { and, eq, isNull } = await import("drizzle-orm");
+      const { and, eq, isNull, or, gt } = await import("drizzle-orm");
 
+      // Include listings with null OR invalid ceiling height (> 600cm = bad data)
       const targets = await db
         .select({ id: listingsTable.id, url: listingsTable.url, description: listingsTable.description })
         .from(listingsTable)
-        .where(and(eq(listingsTable.platform, "yandex"), isNull(listingsTable.ceilingHeight)))
+        .where(and(
+          eq(listingsTable.platform, "yandex"),
+          or(isNull(listingsTable.ceilingHeight), gt(listingsTable.ceilingHeight, 600))
+        ))
         .limit(50);
 
       if (targets.length === 0) {
-        return { started: false, message: "Все объявления Яндекса уже имеют данные" };
+        return { started: false, message: "Все объявления Яндекса уже имеют корректные данные" };
       }
 
       // Start background job

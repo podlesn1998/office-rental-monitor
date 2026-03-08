@@ -381,3 +381,4 @@
 - [x] Fix backfillCeilingHeight: replace Playwright with HTTP fetch (Playwright not available in production)
 - [x] Debug/fix ceiling height parsing for Yandex listing 4290799603150684389: parsing works correctly, added ROUTER_SNAPSHOT fallback
 - [x] Fix ceiling height validation: cap at 600cm max, reject outliers like 900cm
+- [x] Fix backfill: also overwrite invalid ceiling height values (> 600cm), clear bad data from DB via SQL + fixed backfill query

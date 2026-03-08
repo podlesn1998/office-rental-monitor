@@ -1,0 +1,82 @@
+{
+  "query": "SELECT ceilingHeight, COUNT(*) as cnt FROM listings WHERE ceilingHeight IS NOT NULL GROUP BY ceilingHeight ORDER BY ceilingHeight DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT ceilingHeight, COUNT(*) as cnt FROM listings WHERE ceilingHeight IS NOT NULL GROUP BY ceilingHeight ORDER BY ceilingHeight DESC LIMIT 20;",
+  "rows": [
+    {
+      "ceilingHeight": "600",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "400",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "321",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "300",
+      "cnt": "45"
+    },
+    {
+      "ceilingHeight": "287",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "285",
+      "cnt": "2"
+    },
+    {
+      "ceilingHeight": "282",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "280",
+      "cnt": "3"
+    },
+    {
+      "ceilingHeight": "278",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "275",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "270",
+      "cnt": "2"
+    },
+    {
+      "ceilingHeight": "264",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "260",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "255",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "250",
+      "cnt": "3"
+    },
+    {
+      "ceilingHeight": "230",
+      "cnt": "1"
+    },
+    {
+      "ceilingHeight": "220",
+      "cnt": "2"
+    },
+    {
+      "ceilingHeight": "200",
+      "cnt": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "ceilingHeight\tcnt\n600\t1\n400\t1\n321\t1\n300\t45\n287\t1\n285\t2\n282\t1\n280\t3\n278\t1\n275\t1\n270\t2\n264\t1\n260\t1\n255\t1\n250\t3\n230\t1\n220\t2\n200\t4\n",
+  "stderr": "",
+  "execution_time_ms": 363
+}
