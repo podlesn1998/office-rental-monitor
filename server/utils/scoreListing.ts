@@ -5,17 +5,20 @@
  *   - 1st floor
  *   - Separate entrance (отдельный вход)
  *   - Ceiling height ≥ 3.5 m
+ *   - Area 30–60 m² (ideal), < 25 m² unusable, > 60 m² too large
  *
  * Score breakdown (max 100):
- *   Floor:            35 pts  (floor=1: 35, floor=2: 15, floor=3+: 0, unknown: 10)
- *   Separate entrance: 35 pts (keyword match in title/description)
- *   Ceiling height:   30 pts  (≥3.5m: 30, ≥3.0m: 18, ≥2.7m: 8, unknown: 10)
+ *   Floor:            30 pts  (floor=1: 30, floor=2: 12, floor=3: 4, unknown: 8)
+ *   Separate entrance: 30 pts (keyword match in title/description)
+ *   Ceiling height:   20 pts  (≥3.5m: 20, ≥3.0m: 12, ≥2.7m: 5, unknown: 7)
+ *   Area:             20 pts  (30–60m²: 20, 25–30m²: 10, 60–70m²: 10, <25m²: -50, >70m²: 0, unknown: 5)
  */
 
 export interface ScoreInput {
   floor?: number | null;
   totalFloors?: number | null;
   ceilingHeight?: number | null; // in cm, e.g. 350 = 3.5m
+  area?: number | null;          // in m²
   title?: string | null;
   description?: string | null;
 }
@@ -25,6 +28,7 @@ export interface ScoreBreakdown {
   floor: number;
   entrance: number;
   ceiling: number;
+  area: number;
   details: string[];
 }
 
@@ -46,31 +50,32 @@ export function scoreListing(input: ScoreInput): ScoreBreakdown {
   let floorScore = 0;
   let entranceScore = 0;
   let ceilingScore = 0;
+  let areaScore = 0;
 
-  // ---- Floor score (35 pts max) ----
+  // ---- Floor score (30 pts max) ----
   if (input.floor == null) {
-    floorScore = 10; // unknown — slight bonus, might be 1st
-    details.push("Этаж неизвестен (+10)");
+    floorScore = 8; // unknown — slight bonus, might be 1st
+    details.push("Этаж неизвестен (+8)");
   } else if (input.floor === 1) {
-    floorScore = 35;
-    details.push("1-й этаж ✓ (+35)");
+    floorScore = 30;
+    details.push("1-й этаж ✓ (+30)");
   } else if (input.floor === 2) {
-    floorScore = 15;
-    details.push("2-й этаж (+15)");
+    floorScore = 12;
+    details.push("2-й этаж (+12)");
   } else if (input.floor === 3) {
-    floorScore = 5;
-    details.push(`${input.floor}-й этаж (+5)`);
+    floorScore = 4;
+    details.push(`${input.floor}-й этаж (+4)`);
   } else {
     floorScore = 0;
     details.push(`${input.floor}-й этаж (0)`);
   }
 
-  // ---- Separate entrance score (35 pts max) ----
+  // ---- Separate entrance score (30 pts max) ----
   const haystack = `${input.title ?? ""} ${input.description ?? ""}`.toLowerCase();
   const hasEntrance = ENTRANCE_KEYWORDS.some((kw) => haystack.includes(kw.toLowerCase()));
   if (hasEntrance) {
-    entranceScore = 35;
-    details.push("Отдельный вход ✓ (+35)");
+    entranceScore = 30;
+    details.push("Отдельный вход ✓ (+30)");
   } else if (haystack.includes("вход")) {
     // Mentions "вход" but not specifically separate
     entranceScore = 5;
@@ -80,34 +85,58 @@ export function scoreListing(input: ScoreInput): ScoreBreakdown {
     details.push("Отдельный вход не указан (0)");
   }
 
-  // ---- Ceiling height score (30 pts max) ----
+  // ---- Ceiling height score (20 pts max) ----
   if (input.ceilingHeight == null) {
-    ceilingScore = 10; // unknown — slight bonus
-    details.push("Высота потолков неизвестна (+10)");
+    ceilingScore = 7; // unknown — slight bonus
+    details.push("Высота потолков неизвестна (+7)");
   } else {
     const heightM = input.ceilingHeight / 100;
     if (heightM >= 3.5) {
-      ceilingScore = 30;
-      details.push(`Потолки ${heightM.toFixed(1)} м ✓ (+30)`);
+      ceilingScore = 20;
+      details.push(`Потолки ${heightM.toFixed(1)} м ✓ (+20)`);
     } else if (heightM >= 3.0) {
-      ceilingScore = 18;
-      details.push(`Потолки ${heightM.toFixed(1)} м (+18)`);
+      ceilingScore = 12;
+      details.push(`Потолки ${heightM.toFixed(1)} м (+12)`);
     } else if (heightM >= 2.7) {
-      ceilingScore = 8;
-      details.push(`Потолки ${heightM.toFixed(1)} м (+8)`);
+      ceilingScore = 5;
+      details.push(`Потолки ${heightM.toFixed(1)} м (+5)`);
     } else {
       ceilingScore = 0;
       details.push(`Потолки ${heightM.toFixed(1)} м — низко (0)`);
     }
   }
 
-  const total = Math.min(100, floorScore + entranceScore + ceilingScore);
+  // ---- Area score (20 pts max, -50 penalty if < 25 m²) ----
+  if (input.area == null) {
+    areaScore = 5; // unknown — slight bonus
+    details.push("Площадь неизвестна (+5)");
+  } else if (input.area < 25) {
+    areaScore = -50; // unusable
+    details.push(`Площадь ${input.area} м² — непригодно (-50)`);
+  } else if (input.area >= 30 && input.area <= 60) {
+    areaScore = 20; // ideal range
+    details.push(`Площадь ${input.area} м² ✓ идеально (+20)`);
+  } else if (input.area >= 25 && input.area < 30) {
+    areaScore = 10; // slightly small but acceptable
+    details.push(`Площадь ${input.area} м² — немного мало (+10)`);
+  } else if (input.area > 60 && input.area <= 70) {
+    areaScore = 10; // slightly large but acceptable
+    details.push(`Площадь ${input.area} м² — немного много (+10)`);
+  } else {
+    // > 70 m²
+    areaScore = 0;
+    details.push(`Площадь ${input.area} м² — слишком много (0)`);
+  }
+
+  const rawTotal = floorScore + entranceScore + ceilingScore + areaScore;
+  const total = Math.max(0, Math.min(100, rawTotal));
 
   return {
     total,
     floor: floorScore,
     entrance: entranceScore,
     ceiling: ceilingScore,
+    area: areaScore,
     details,
   };
 }

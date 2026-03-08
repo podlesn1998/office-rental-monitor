@@ -168,6 +168,7 @@ async function saveNewListings(
         floor: listing.floor,
         totalFloors: listing.totalFloors,
         ceilingHeight: listing.ceilingHeight,
+        area: listing.area,
         title: listing.title,
         description: listing.description,
       });

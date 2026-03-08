@@ -384,3 +384,4 @@
 - [x] Fix backfill: also overwrite invalid ceiling height values (> 600cm), clear bad data from DB via SQL + fixed backfill query
 - [x] Fix CIAN price not showing on listing card (298475382): updated price manually to 50000, CIAN blocks HTTP fetch with captcha so backfill not possible
 - [x] Add CIAN price backfill: investigated - CIAN returns captcha for HTTP requests, backfill not possible without browser session
+- [x] Add area scoring: 30-60m² ideal (+20), <25m² unusable (-50), 25-30m² small (+10), 60-70m² large (+10), >70m² too large (0)

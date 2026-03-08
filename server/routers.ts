@@ -212,6 +212,7 @@ export const appRouter = router({
           floor: row.floor,
           totalFloors: row.totalFloors,
           ceilingHeight: row.ceilingHeight as number | null | undefined,
+          area: row.area as number | null | undefined,
           title: row.title,
           description: row.description,
         });
@@ -378,7 +379,7 @@ export const appRouter = router({
           const allListings = await db.select().from(listingsTable);
           const { computeScore } = await import("./utils/scoreListing");
           for (const row of allListings) {
-            const score = computeScore({ floor: row.floor, totalFloors: row.totalFloors, ceilingHeight: row.ceilingHeight as number | null | undefined, title: row.title, description: row.description });
+            const score = computeScore({ floor: row.floor, totalFloors: row.totalFloors, ceilingHeight: row.ceilingHeight as number | null | undefined, area: row.area as number | null | undefined, title: row.title, description: row.description });
             if (score !== row.score) await db.update(listingsTable).set({ score }).where(eq(listingsTable.id, row.id));
           }
           backfillState = { ...backfillState, running: false };
