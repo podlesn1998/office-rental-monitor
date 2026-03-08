@@ -336,3 +336,8 @@
 - [x] Fix keep-alive to use production URL (not localhost)
 - [x] Increase keep-alive ping frequency to every 2 minutes
 - [ ] Document external cron-job.org setup as reliable fallback
+
+## Bug: CIAN area parsing wrong — listings with 10m² and 26m² pass 40-70m² filter
+- [x] Diagnose CIAN area parsing (check selector and regex)
+- [x] Add hard post-filter by area (minArea/maxArea) in scraper pipeline
+- [x] Delete wrongly saved listings from DB

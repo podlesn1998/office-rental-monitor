@@ -1,0 +1,94 @@
+{
+  "query": "SELECT id, platform, platformId, area, price FROM listings WHERE area IS NOT NULL AND (area < 40 OR area > 70);\nDELETE FROM listings WHERE area IS NOT NULL AND (area < 40 OR area > 70);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT id, platform, platformId, area, price FROM listings WHERE area IS NOT NULL AND (area < 40 OR area > 70);\nDELETE FROM listings WHERE area IS NOT NULL AND (area < 40 OR area > 70);",
+  "rows": [
+    {
+      "id": "180010",
+      "platform": "cian",
+      "platformId": "322671880",
+      "area": "32",
+      "price": "NULL"
+    },
+    {
+      "id": "180011",
+      "platform": "cian",
+      "platformId": "311275214",
+      "area": "74",
+      "price": "NULL"
+    },
+    {
+      "id": "180012",
+      "platform": "cian",
+      "platformId": "324673586",
+      "area": "32",
+      "price": "NULL"
+    },
+    {
+      "id": "180014",
+      "platform": "cian",
+      "platformId": "327154811",
+      "area": "100",
+      "price": "NULL"
+    },
+    {
+      "id": "180015",
+      "platform": "cian",
+      "platformId": "323867296",
+      "area": "85",
+      "price": "NULL"
+    },
+    {
+      "id": "180038",
+      "platform": "yandex",
+      "platformId": "6379997249326421578",
+      "area": "38",
+      "price": "60000"
+    },
+    {
+      "id": "180040",
+      "platform": "yandex",
+      "platformId": "500800435634834688",
+      "area": "39",
+      "price": "70000"
+    },
+    {
+      "id": "240004",
+      "platform": "cian",
+      "platformId": "326645067",
+      "area": "21",
+      "price": "45000"
+    },
+    {
+      "id": "240005",
+      "platform": "cian",
+      "platformId": "310719605",
+      "area": "39",
+      "price": "70000"
+    },
+    {
+      "id": "300001",
+      "platform": "yandex",
+      "platformId": "2697540370642448897",
+      "area": "73",
+      "price": "60000"
+    },
+    {
+      "id": "330001",
+      "platform": "cian",
+      "platformId": "315353787",
+      "area": "10",
+      "price": "80000"
+    },
+    {
+      "id": "330002",
+      "platform": "cian",
+      "platformId": "315473369",
+      "area": "26",
+      "price": "69980"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplatform\tplatformId\tarea\tprice\n180010\tcian\t322671880\t32\tNULL\n180011\tcian\t311275214\t74\tNULL\n180012\tcian\t324673586\t32\tNULL\n180014\tcian\t327154811\t100\tNULL\n180015\tcian\t323867296\t85\tNULL\n180038\tyandex\t6379997249326421578\t38\t60000\n180040\tyandex\t500800435634834688\t39\t70000\n240004\tcian\t326645067\t21\t45000\n240005\tcian\t310719605\t39\t70000\n300001\tyandex\t2697540370642448897\t73\t60000\n330001\tcian\t315353787\t10\t80000\n330002\tcian\t315473369\t26\t69980\n",
+  "stderr": "",
+  "execution_time_ms": 440
+}

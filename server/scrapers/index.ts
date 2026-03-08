@@ -118,6 +118,21 @@ function applyPriceFilter(
 }
 
 /**
+ * Apply area filter: exclude listings where area is outside [minArea, maxArea].
+ * Listings with null area are kept (area unknown).
+ */
+function applyAreaFilter(
+  listing: InsertListing,
+  minArea?: number | null,
+  maxArea?: number | null
+): boolean {
+  if (listing.area == null) return true; // keep if area unknown
+  if (minArea && listing.area < minArea) return false;
+  if (maxArea && listing.area > maxArea) return false;
+  return true;
+}
+
+/**
  * Apply floor filter.
  */
 function applyFloorFilter(
@@ -248,13 +263,14 @@ export async function runPlatformScrape(platform: Platform): Promise<ScrapeResul
     else if (platform === "avito") scraped = await scrapeAvito(config);
     else if (platform === "yandex") scraped = await scrapeYandex(config);
 
-    // Apply keyword, floor, district, and price filters
+    // Apply keyword, floor, district, price, and area filters
     const filtered = scraped.filter(
       (l) =>
         applyKeywordFilter(l, config.keywords) &&
         applyFloorFilter(l, config.minFloor, config.maxFloor) &&
         applyDistrictFilter(l, config.districts) &&
-        applyPriceFilter(l, config.minPrice, config.maxPrice)
+        applyPriceFilter(l, config.minPrice, config.maxPrice) &&
+        applyAreaFilter(l, config.minArea, config.maxArea)
     );
 
     if (filtered.length < scraped.length) {
@@ -262,8 +278,12 @@ export async function runPlatformScrape(platform: Platform): Promise<ScrapeResul
       if (priceFiltered.length > 0) {
         console.log(`[Scraper] Filtered ${priceFiltered.length} listings by price (min=${config.minPrice}, max=${config.maxPrice}): ${priceFiltered.map(l => `${l.price}₽`).join(', ')}`);
       }
+      const areaFiltered = scraped.filter((l) => !applyAreaFilter(l, config.minArea, config.maxArea));
+      if (areaFiltered.length > 0) {
+        console.log(`[Scraper] Filtered ${areaFiltered.length} listings by area (min=${config.minArea}, max=${config.maxArea}): ${areaFiltered.map(l => `${l.area}м²`).join(', ')}`);
+      }
       console.log(
-        `[Scraper] Filtered ${scraped.length - filtered.length} listings total by keywords/floor/district/price` +
+        `[Scraper] Filtered ${scraped.length - filtered.length} listings total by keywords/floor/district/price/area` +
         (config.districts.length > 0 ? ` (districts: ${config.districts.join(", ")})` : "")
       );
     }

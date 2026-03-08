@@ -1,0 +1,85 @@
+{
+  "query": "SELECT platform, price, createdAt FROM listings ORDER BY createdAt DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT platform, price, createdAt FROM listings ORDER BY createdAt DESC LIMIT 15;",
+  "rows": [
+    {
+      "platform": "cian",
+      "price": "69980",
+      "createdAt": "2026-03-08 11:46:45"
+    },
+    {
+      "platform": "cian",
+      "price": "80000",
+      "createdAt": "2026-03-08 11:46:45"
+    },
+    {
+      "platform": "yandex",
+      "price": "60000",
+      "createdAt": "2026-03-06 07:48:41"
+    },
+    {
+      "platform": "yandex",
+      "price": "86900",
+      "createdAt": "2026-03-05 12:28:43"
+    },
+    {
+      "platform": "cian",
+      "price": "45000",
+      "createdAt": "2026-03-05 11:16:19"
+    },
+    {
+      "platform": "cian",
+      "price": "70000",
+      "createdAt": "2026-03-05 11:16:19"
+    },
+    {
+      "platform": "yandex",
+      "price": "90000",
+      "createdAt": "2026-03-04 14:10:16"
+    },
+    {
+      "platform": "yandex",
+      "price": "60000",
+      "createdAt": "2026-03-04 14:10:16"
+    },
+    {
+      "platform": "yandex",
+      "price": "70000",
+      "createdAt": "2026-03-04 13:13:23"
+    },
+    {
+      "platform": "yandex",
+      "price": "60000",
+      "createdAt": "2026-03-04 13:13:23"
+    },
+    {
+      "platform": "yandex",
+      "price": "90000",
+      "createdAt": "2026-03-04 13:13:22"
+    },
+    {
+      "platform": "yandex",
+      "price": "74999",
+      "createdAt": "2026-03-04 13:13:22"
+    },
+    {
+      "platform": "yandex",
+      "price": "83538",
+      "createdAt": "2026-03-04 13:13:22"
+    },
+    {
+      "platform": "yandex",
+      "price": "75000",
+      "createdAt": "2026-03-04 13:13:22"
+    },
+    {
+      "platform": "yandex",
+      "price": "53000",
+      "createdAt": "2026-03-04 13:13:22"
+    }
+  ],
+  "messages": [],
+  "stdout": "platform\tprice\tcreatedAt\ncian\t69980\t2026-03-08 11:46:45\ncian\t80000\t2026-03-08 11:46:45\nyandex\t60000\t2026-03-06 07:48:41\nyandex\t86900\t2026-03-05 12:28:43\ncian\t45000\t2026-03-05 11:16:19\ncian\t70000\t2026-03-05 11:16:19\nyandex\t90000\t2026-03-04 14:10:16\nyandex\t60000\t2026-03-04 14:10:16\nyandex\t70000\t2026-03-04 13:13:23\nyandex\t60000\t2026-03-04 13:13:23\nyandex\t90000\t2026-03-04 13:13:22\nyandex\t74999\t2026-03-04 13:13:22\nyandex\t83538\t2026-03-04 13:13:22\nyandex\t75000\t2026-03-04 13:13:22\nyandex\t53000\t2026-03-04 13:13:22\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}
