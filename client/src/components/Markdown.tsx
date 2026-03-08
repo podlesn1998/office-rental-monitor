@@ -63,8 +63,6 @@
 
 import { memo, type ReactNode, type ComponentProps } from "react";
 import { Streamdown } from "streamdown";
-import { code } from "@streamdown/code";
-import { mermaid } from "@streamdown/mermaid";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -166,7 +164,7 @@ const components = {
 // MARKDOWN COMPONENT
 // ============================================================================
 
-type MarkdownProps = Omit<ComponentProps<typeof Streamdown>, "components" | "plugins"> & {
+type MarkdownProps = Omit<ComponentProps<typeof Streamdown>, "components"> & {
   /** Override specific element renderers */
   components?: Partial<typeof components>;
   /** Enable/disable code syntax highlighting (default: true) */
@@ -202,24 +200,17 @@ export const Markdown = memo(function Markdown({
   components: customComponents,
   shikiTheme = ["github-light", "github-dark"],
   controls = true,
-  enableCode = true,
+  enableCode: _enableCode = true,
   enableMermaid = true,
   ...props
 }: MarkdownProps) {
-  // Build plugins object based on what's enabled
-  // @see https://streamdown.ai/docs/code-blocks
-  // @see https://streamdown.ai/docs/mermaid
-  const plugins: Record<string, unknown> = {};
-  if (enableCode) plugins.code = code;
-  if (enableMermaid) plugins.mermaid = mermaid;
-
   return (
     <Streamdown
       className={cn("text-foreground leading-relaxed", className)}
       components={{ ...components, ...customComponents }}
-      plugins={plugins}
       shikiTheme={shikiTheme}
       controls={controls}
+      mermaid={enableMermaid ? {} : undefined}
       {...props}
     >
       {children}
