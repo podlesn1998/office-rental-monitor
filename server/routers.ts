@@ -293,58 +293,79 @@ export const appRouter = router({
       backfillState = { running: true, total: targets.length, processed: 0, updated: 0, error: null };
       console.log(`[Backfill] Queuing ${targets.length} Yandex listings for ceiling height backfill`);
 
+      // Helper: fetch Yandex listing page and extract ceiling height via HTTP (no browser needed)
+      async function fetchYandexDetail(url: string): Promise<{ ceilingHeight: number | null; entranceSeparate: boolean }> {
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
+          "Accept-Encoding": "gzip, deflate, br",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
+        };
+        const resp = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+        const html = await resp.text();
+
+        let ceilingHeight: number | null = null;
+        let entranceSeparate = false;
+
+        // Try __NEXT_DATA__ JSON first (most reliable)
+        const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+        if (nextDataMatch) {
+          try {
+            const json = JSON.parse(nextDataMatch[1]);
+            const jsonStr = JSON.stringify(json);
+            // Look for ceilingHeight in JSON
+            const ceilJsonMatch = jsonStr.match(/"ceilingHeight"\s*:\s*([\d.]+)/);
+            if (ceilJsonMatch) {
+              const val = parseFloat(ceilJsonMatch[1]);
+              // Value could be in meters (2.8) or cm (280)
+              if (val >= 200 && val <= 1000) ceilingHeight = Math.round(val);
+              else if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
+            }
+            // Look for entrance type
+            if (/"entranceType"\s*:\s*"SEPARATE"/i.test(jsonStr) || /"SEPARATE_ENTRANCE"/i.test(jsonStr)) {
+              entranceSeparate = true;
+            }
+          } catch { /* ignore JSON parse errors */ }
+        }
+
+        // Fallback: regex on raw HTML text
+        if (ceilingHeight === null) {
+          const textMatch = html.match(/Высота потолков[^<]{0,30}([\d,\.]+)\s*[мm]/i);
+          if (textMatch) {
+            const val = parseFloat(textMatch[1].replace(",", "."));
+            if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
+          }
+        }
+        if (!entranceSeparate) {
+          entranceSeparate = /отдельн[ыйого\s]+вход/i.test(html) || /"SEPARATE"/i.test(html);
+        }
+
+        return { ceilingHeight, entranceSeparate };
+      }
+
       // Run in background (fire-and-forget)
       (async () => {
         try {
-          const { createStealthPage, acquireScrapeLock, releaseScrapeLock } = await import("./scrapers/browser");
-          const gotLock = await acquireScrapeLock(300000);
-          if (!gotLock) {
-            backfillState = { ...backfillState, running: false, error: "Скрапер занят, попробуйте позже" };
-            return;
-          }
-          const { page: _p, context } = await createStealthPage();
-          const detailPage = await context.newPage();
-          try {
-            for (const target of targets) {
-              if (!target.url) { backfillState = { ...backfillState, processed: backfillState.processed + 1 }; continue; }
-              try {
-                await detailPage.goto(target.url, { waitUntil: "domcontentloaded", timeout: 25000 });
-                await detailPage.waitForTimeout(2000);
-                try {
-                  const allBtns = await detailPage.$$('span[role="button"]');
-                  for (const btn of allBtns) {
-                    const t = await btn.textContent();
-                    if (t && t.includes("характеристик")) { await btn.click(); await detailPage.waitForTimeout(800); break; }
-                  }
-                } catch { /* ignore */ }
-                const result = await detailPage.evaluate(() => {
-                  const text = document.body.innerText;
-                  let ceilingHeight: number | null = null;
-                  const ceilMatch = text.match(/Высота потолков[:\s]+([\d,\.]+)\s*м/i);
-                  if (ceilMatch) { const val = parseFloat(ceilMatch[1].replace(",", ".")); if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100); }
-                  let entranceSeparate = false;
-                  const em = text.match(/Вход[:\s]+([^\n]+)/i);
-                  if (em) entranceSeparate = em[1].trim().toLowerCase().includes("отдельн");
-                  if (!entranceSeparate && /отдельн[ыйого]+\s+вход/i.test(text)) entranceSeparate = true;
-                  return { ceilingHeight, entranceSeparate };
-                });
-                if (result.ceilingHeight !== null || result.entranceSeparate) {
-                  const updateData: Record<string, unknown> = {};
-                  if (result.ceilingHeight !== null) updateData.ceilingHeight = result.ceilingHeight;
-                  if (result.entranceSeparate && !target.description?.includes("отдельный вход")) updateData.description = "отдельный вход";
-                  await db.update(listingsTable).set(updateData).where(eq(listingsTable.id, target.id));
-                  backfillState = { ...backfillState, updated: backfillState.updated + 1 };
-                  console.log(`[Backfill] Updated ${target.id}: ceiling=${result.ceilingHeight}cm entrance=${result.entranceSeparate}`);
-                }
-              } catch (err) {
-                console.warn(`[Backfill] Failed for ${target.id}:`, err instanceof Error ? err.message : err);
+          for (const target of targets) {
+            if (!target.url) { backfillState = { ...backfillState, processed: backfillState.processed + 1 }; continue; }
+            try {
+              const result = await fetchYandexDetail(target.url);
+              if (result.ceilingHeight !== null || result.entranceSeparate) {
+                const updateData: Record<string, unknown> = {};
+                if (result.ceilingHeight !== null) updateData.ceilingHeight = result.ceilingHeight;
+                if (result.entranceSeparate && !target.description?.includes("отдельный вход")) updateData.description = "отдельный вход";
+                await db.update(listingsTable).set(updateData).where(eq(listingsTable.id, target.id));
+                backfillState = { ...backfillState, updated: backfillState.updated + 1 };
+                console.log(`[Backfill] Updated ${target.id}: ceiling=${result.ceilingHeight}cm entrance=${result.entranceSeparate}`);
               }
-              backfillState = { ...backfillState, processed: backfillState.processed + 1 };
-              await detailPage.waitForTimeout(1500);
+            } catch (err) {
+              console.warn(`[Backfill] Failed for ${target.id}:`, err instanceof Error ? err.message : err);
             }
-          } finally {
-            await context.close();
-            releaseScrapeLock();
+            backfillState = { ...backfillState, processed: backfillState.processed + 1 };
+            // Small delay to avoid rate limiting
+            await new Promise(r => setTimeout(r, 1200));
           }
           // Rescore
           const allListings = await db.select().from(listingsTable);
