@@ -350,3 +350,7 @@
 ## Feature: Delete comment prompt and confirmation messages from Telegram chat
 - [x] Store prompt message_id in pendingComments when asking for comment
 - [x] Delete prompt message and confirmation message after comment is saved
+
+## Bug: Floor filter reverts to 1 when cleared
+- [x] Fix floor filter input to allow empty/null value when user clears it
+- [x] Fix backend to save null when floor field is empty

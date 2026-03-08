@@ -246,8 +246,8 @@ export async function updateSearchConfig(
     if (data.enableCian !== undefined) updateData.enableCian = data.enableCian;
     if (data.enableAvito !== undefined) updateData.enableAvito = data.enableAvito;
     if (data.enableYandex !== undefined) updateData.enableYandex = data.enableYandex;
-    if (data.minFloor !== undefined) updateData.minFloor = data.minFloor;
-    if (data.maxFloor !== undefined) updateData.maxFloor = data.maxFloor;
+    if ('minFloor' in data) updateData.minFloor = data.minFloor ?? null;
+    if ('maxFloor' in data) updateData.maxFloor = data.maxFloor ?? null;
     if (data.keywords !== undefined) updateData.keywords = data.keywords;
     if (data.districts !== undefined) updateData.districts = data.districts;
     await db.update(searchConfig).set(updateData).where(eq(searchConfig.id, existing[0].id));

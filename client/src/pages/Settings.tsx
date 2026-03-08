@@ -306,8 +306,8 @@ export default function Settings() {
       enableCian,
       enableAvito,
       enableYandex,
-      minFloor: minFloor ?? undefined,
-      maxFloor: maxFloor ?? undefined,
+      minFloor: minFloor,
+      maxFloor: maxFloor,
       keywords,
       districts: selectedDistricts,
     });
