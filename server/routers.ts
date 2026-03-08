@@ -41,6 +41,7 @@ export const appRouter = router({
           platform: z.enum(["cian", "avito", "yandex"]).optional(),
           isNew: z.boolean().optional(),
           status: z.enum(["new", "not_interesting", "interesting"]).optional(),
+          sortBy: z.enum(["score_desc", "score_asc", "date_desc", "price_asc", "price_desc"]).optional(),
           limit: z.number().min(1).max(100).default(20),
           offset: z.number().min(0).default(0),
         })

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,9 +17,11 @@ import {
   Star,
   Clock,
   MessageSquare,
+  SortAsc,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState as useStateLocal, useRef, useEffect } from "react";
+import { useState as useStateLocal } from "react";
 
 type Platform = "cian" | "avito" | "yandex";
 
@@ -36,6 +38,15 @@ const PLATFORM_COLORS: Record<Platform, string> = {
 };
 
 type ListingStatus = "new" | "not_interesting" | "interesting";
+type SortBy = "score_desc" | "score_asc" | "date_desc" | "price_asc" | "price_desc";
+
+const SORT_LABELS: Record<SortBy, string> = {
+  score_desc: "По оценке ↓",
+  score_asc: "По оценке ↑",
+  date_desc: "По дате",
+  price_asc: "По цене ↑",
+  price_desc: "По цене ↓",
+};
 
 interface ListingItem {
   id: number;
@@ -357,8 +368,23 @@ function ListingSkeleton() {
 export default function Home() {
   const [platform, setPlatform] = useState<Platform | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<ListingStatus | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<SortBy>("score_desc");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
   const [isScraping, setIsScraping] = useState(false);
+
+  // Close sort menu on outside click
+  useEffect(() => {
+    if (!showSortMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setShowSortMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showSortMenu]);
   const LIMIT = 15;
 
   const utils = trpc.useUtils();
@@ -367,21 +393,21 @@ export default function Home() {
     onMutate: async ({ id, status }) => {
       // Optimistic update
       await utils.listings.list.cancel();
-      const prev = utils.listings.list.getData({ platform, status: statusFilter, limit: LIMIT, offset });
+      const prev = utils.listings.list.getData({ platform, status: statusFilter, sortBy, limit: LIMIT, offset });
       utils.listings.list.setData(
-        { platform, status: statusFilter, limit: LIMIT, offset },
+        { platform, status: statusFilter, sortBy, limit: LIMIT, offset },
         (old) => old ? { ...old, items: old.items.map((item) => item.id === id ? { ...item, status } : item) } : old
       );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) utils.listings.list.setData({ platform, status: statusFilter, limit: LIMIT, offset }, ctx.prev);
+      if (ctx?.prev) utils.listings.list.setData({ platform, status: statusFilter, sortBy, limit: LIMIT, offset }, ctx.prev);
     },
     onSettled: () => utils.listings.list.invalidate(),
   });
 
   const { data, isLoading, refetch } = trpc.listings.list.useQuery(
-    { platform, status: statusFilter, limit: LIMIT, offset },
+    { platform, status: statusFilter, sortBy, limit: LIMIT, offset },
     { refetchInterval: 120000 }
   );
   const { data: stats } = trpc.listings.stats.useQuery(undefined, { refetchInterval: 60000 });
@@ -542,6 +568,36 @@ export default function Home() {
           >
             <Eye size={11} /> Неинтересные
           </button>
+        </div>
+
+        {/* Sort selector */}
+        <div className="relative mb-3" ref={sortMenuRef}>
+          <button
+            onClick={() => setShowSortMenu((v) => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-card text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <SortAsc size={11} />
+            {SORT_LABELS[sortBy]}
+            <ChevronDown size={10} className={`transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
+          </button>
+          {showSortMenu && (
+            <div
+              className="absolute left-0 top-9 z-50 rounded-xl border border-border shadow-xl overflow-hidden"
+              style={{ background: "oklch(0.18 0.02 250)", minWidth: "160px" }}
+            >
+              {(Object.entries(SORT_LABELS) as [SortBy, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => { setSortBy(key); setOffset(0); setShowSortMenu(false); }}
+                  className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-white/5 ${
+                    sortBy === key ? "text-primary font-semibold" : "text-foreground/80"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Platform filter chips */}

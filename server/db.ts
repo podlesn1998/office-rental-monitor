@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, isNull, notInArray, sql, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, notInArray, sql, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createPool as createMysqlPool } from "mysql2/promise";
 import {
@@ -112,6 +112,7 @@ export async function getListings(opts: {
   isNew?: boolean;
   isSent?: boolean;
   status?: "new" | "not_interesting" | "interesting";
+  sortBy?: "score_desc" | "score_asc" | "date_desc" | "price_asc" | "price_desc";
   limit?: number;
   offset?: number;
 }) {
@@ -128,12 +129,29 @@ export async function getListings(opts: {
   const limit = opts.limit ?? 20;
   const offset = opts.offset ?? 0;
 
+  // Build order-by clause based on sortBy
+  const sortBy = opts.sortBy ?? "score_desc";
+  let orderClause;
+  if (sortBy === "score_desc") {
+    orderClause = [desc(listings.score), desc(listings.firstSeen)];
+  } else if (sortBy === "score_asc") {
+    orderClause = [asc(listings.score), desc(listings.firstSeen)];
+  } else if (sortBy === "date_desc") {
+    orderClause = [desc(listings.firstSeen)];
+  } else if (sortBy === "price_asc") {
+    orderClause = [asc(listings.price), desc(listings.firstSeen)];
+  } else if (sortBy === "price_desc") {
+    orderClause = [desc(listings.price), desc(listings.firstSeen)];
+  } else {
+    orderClause = [desc(listings.score), desc(listings.firstSeen)];
+  }
+
   const [items, countResult] = await Promise.all([
     db
       .select()
       .from(listings)
       .where(where)
-      .orderBy(desc(listings.score), desc(listings.firstSeen))
+      .orderBy(...orderClause)
       .limit(limit)
       .offset(offset),
     db

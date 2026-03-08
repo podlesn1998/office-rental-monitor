@@ -363,3 +363,8 @@
 
 ## Bug: Hourly report sent twice after server restart
 - [x] Align hourly report to clock hour boundary (e.g. 19:00, 20:00) instead of 1h after server start
+
+## Feature: Sort by Score
+- [x] Add sortBy param to getListings (score_desc, score_asc, date_desc, price_asc, price_desc)
+- [x] Update tRPC listings.list input to accept sortBy
+- [x] Add sort selector UI on listings page
