@@ -1,0 +1,20 @@
+{
+  "query": "SELECT platform, COUNT(*) as total, SUM(CASE WHEN price IS NULL THEN 1 ELSE 0 END) as null_price FROM listings GROUP BY platform;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT platform, COUNT(*) as total, SUM(CASE WHEN price IS NULL THEN 1 ELSE 0 END) as null_price FROM listings GROUP BY platform;",
+  "rows": [
+    {
+      "platform": "cian",
+      "total": "13",
+      "null_price": "9"
+    },
+    {
+      "platform": "yandex",
+      "total": "86",
+      "null_price": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "platform\ttotal\tnull_price\ncian\t13\t9\nyandex\t86\t0\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

@@ -1,0 +1,55 @@
+{
+  "query": "SELECT platformId, title, url FROM listings WHERE platform = 'cian' AND price IS NULL LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT platformId, title, url FROM listings WHERE platform = 'cian' AND price IS NULL LIMIT 10;",
+  "rows": [
+    {
+      "platformId": "327350174",
+      "title": "Своб. назнач. 40 м² за 50 000 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/327350174/"
+    },
+    {
+      "platformId": "326412199",
+      "title": "Своб. назнач. 56,4 м² за 70 000 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/326412199/"
+    },
+    {
+      "platformId": "324995026",
+      "title": "Своб. назнач. 43,3 м² за 68 500 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/324995026/"
+    },
+    {
+      "platformId": "327376942",
+      "title": "Своб. назнач. 50,6 м² за 55 000 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/327376942/"
+    },
+    {
+      "platformId": "326041867",
+      "title": "Своб. назнач. 49,2 м² за 79 999 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/326041867/"
+    },
+    {
+      "platformId": "325631626",
+      "title": "Своб. назнач. 53,3 м² за 50 000 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/325631626/"
+    },
+    {
+      "platformId": "321755148",
+      "title": "Своб. назнач. 65 м² за 70 000 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/321755148/"
+    },
+    {
+      "platformId": "325622923",
+      "title": "Своб. назнач. 54,7 м² за 82 050 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/325622923/"
+    },
+    {
+      "platformId": "314903019",
+      "title": "Своб. назнач. 40 м² за 40 000 руб./мес.",
+      "url": "https://spb.cian.ru/rent/commercial/314903019/"
+    }
+  ],
+  "messages": [],
+  "stdout": "platformId\ttitle\turl\n327350174\tСвоб. назнач. 40 м² за 50 000 руб./мес.\thttps://spb.cian.ru/rent/commercial/327350174/\n326412199\tСвоб. назнач. 56,4 м² за 70 000 руб./мес.\thttps://spb.cian.ru/rent/commercial/326412199/\n324995026\tСвоб. назнач. 43,3 м² за 68 500 руб./мес.\thttps://spb.cian.ru/rent/commercial/324995026/\n327376942\tСвоб. назнач. 50,6 м² за 55 000 руб./мес.\thttps://spb.cian.ru/rent/commercial/327376942/\n326041867\tСвоб. назнач. 49,2 м² за 79 999 руб./мес.\thttps://spb.cian.ru/rent/commercial/326041867/\n325631626\tСвоб. назнач. 53,3 м² за 50 000 руб./мес.\thttps://spb.cian.ru/rent/commercial/325631626/\n321755148\tСвоб. назнач. 65 м² за 70 000 руб./мес.\thttps://spb.cian.ru/rent/commercial/321755148/\n325622923\tСвоб. назнач. 54,7 м² за 82 050 руб./мес.\thttps://spb.cian.ru/rent/commercial/325622923/\n314903019\tСвоб. назнач. 40 м² за 40 000 руб./мес.\thttps://spb.cian.ru/rent/commercial/314903019/\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

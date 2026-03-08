@@ -382,3 +382,5 @@
 - [x] Debug/fix ceiling height parsing for Yandex listing 4290799603150684389: parsing works correctly, added ROUTER_SNAPSHOT fallback
 - [x] Fix ceiling height validation: cap at 600cm max, reject outliers like 900cm
 - [x] Fix backfill: also overwrite invalid ceiling height values (> 600cm), clear bad data from DB via SQL + fixed backfill query
+- [x] Fix CIAN price not showing on listing card (298475382): updated price manually to 50000, CIAN blocks HTTP fetch with captcha so backfill not possible
+- [x] Add CIAN price backfill: investigated - CIAN returns captcha for HTTP requests, backfill not possible without browser session

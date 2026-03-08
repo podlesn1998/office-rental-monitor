@@ -1,0 +1,16 @@
+{
+  "query": "SELECT platformId, CAST(price AS CHAR) as price_str, area, title FROM listings WHERE platformId = '298475382';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute SELECT platformId, CAST(price AS CHAR) as price_str, area, title FROM listings WHERE platformId = '298475382';",
+  "rows": [
+    {
+      "platformId": "298475382",
+      "price_str": "NULL",
+      "area": "40",
+      "title": "Аренда кофейни"
+    }
+  ],
+  "messages": [],
+  "stdout": "platformId\tprice_str\tarea\ttitle\n298475382\tNULL\t40\tАренда кофейни\n",
+  "stderr": "",
+  "execution_time_ms": 365
+}
