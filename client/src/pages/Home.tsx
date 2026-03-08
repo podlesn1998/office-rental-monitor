@@ -77,15 +77,15 @@ function computeScoreBreakdown(listing: ListingItem): { label: string; pts: numb
 
   // Floor
   if (listing.floor == null) {
-    breakdown.push({ label: "Этаж не указан", pts: 10, max: 35, icon: "🏢" });
+    breakdown.push({ label: "Этаж не указан", pts: 8, max: 30, icon: "🏢" });
   } else if (listing.floor === 1) {
-    breakdown.push({ label: "1-й этаж — идеально", pts: 35, max: 35, icon: "🏢" });
+    breakdown.push({ label: "1-й этаж — идеально", pts: 30, max: 30, icon: "🏢" });
   } else if (listing.floor === 2) {
-    breakdown.push({ label: `2-й этаж`, pts: 15, max: 35, icon: "🏢" });
+    breakdown.push({ label: `2-й этаж`, pts: 12, max: 30, icon: "🏢" });
   } else if (listing.floor === 3) {
-    breakdown.push({ label: `3-й этаж`, pts: 5, max: 35, icon: "🏢" });
+    breakdown.push({ label: `3-й этаж`, pts: 4, max: 30, icon: "🏢" });
   } else {
-    breakdown.push({ label: `${listing.floor}-й этаж`, pts: 0, max: 35, icon: "🏢" });
+    breakdown.push({ label: `${listing.floor}-й этаж`, pts: 0, max: 30, icon: "🏢" });
   }
 
   // Entrance
@@ -93,22 +93,34 @@ function computeScoreBreakdown(listing: ListingItem): { label: string; pts: numb
   const haystack = `${listing.title ?? ""} ${(listing as any).description ?? ""}`.toLowerCase();
   const hasEntrance = ENTRANCE_KW.some((kw) => haystack.includes(kw));
   if (hasEntrance) {
-    breakdown.push({ label: "Отдельный вход — есть", pts: 35, max: 35, icon: "🚪" });
+    breakdown.push({ label: "Отдельный вход — есть", pts: 30, max: 30, icon: "🚪" });
   } else if (haystack.includes("вход")) {
-    breakdown.push({ label: "Вход упоминается", pts: 5, max: 35, icon: "🚪" });
+    breakdown.push({ label: "Вход упоминается", pts: 4, max: 30, icon: "🚪" });
   } else {
-    breakdown.push({ label: "Отд. вход не указан", pts: 0, max: 35, icon: "🚪" });
+    breakdown.push({ label: "Отд. вход не указан", pts: 0, max: 30, icon: "🚪" });
   }
 
   // Ceiling
   if (listing.ceilingHeight == null) {
-    breakdown.push({ label: "Потолок не указан", pts: 10, max: 30, icon: "↕️" });
+    breakdown.push({ label: "Потолок не указан", pts: 5, max: 20, icon: "↕️" });
   } else {
     const h = listing.ceilingHeight / 100;
-    if (h >= 3.5) breakdown.push({ label: `Потолок ${h.toFixed(1)} м — идеально`, pts: 30, max: 30, icon: "↕️" });
-    else if (h >= 3.0) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 18, max: 30, icon: "↕️" });
-    else if (h >= 2.7) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 8, max: 30, icon: "↕️" });
-    else breakdown.push({ label: `Потолок ${h.toFixed(1)} м — низко`, pts: 0, max: 30, icon: "↕️" });
+    if (h >= 3.5) breakdown.push({ label: `Потолок ${h.toFixed(1)} м — идеально`, pts: 20, max: 20, icon: "↕️" });
+    else if (h >= 3.0) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 12, max: 20, icon: "↕️" });
+    else if (h >= 2.7) breakdown.push({ label: `Потолок ${h.toFixed(1)} м`, pts: 5, max: 20, icon: "↕️" });
+    else breakdown.push({ label: `Потолок ${h.toFixed(1)} м — низко`, pts: 0, max: 20, icon: "↕️" });
+  }
+
+  // Area
+  if (listing.area == null) {
+    breakdown.push({ label: "Площадь не указана", pts: 5, max: 20, icon: "📐" });
+  } else {
+    const a = listing.area;
+    if (a < 25) breakdown.push({ label: `${a} м² — слишком мало`, pts: -50, max: 20, icon: "📐" });
+    else if (a <= 30) breakdown.push({ label: `${a} м² — маловато`, pts: 10, max: 20, icon: "📐" });
+    else if (a <= 60) breakdown.push({ label: `${a} м² — идеально`, pts: 20, max: 20, icon: "📐" });
+    else if (a <= 70) breakdown.push({ label: `${a} м² — немного много`, pts: 10, max: 20, icon: "📐" });
+    else breakdown.push({ label: `${a} м² — слишком много`, pts: 0, max: 20, icon: "📐" });
   }
 
   return breakdown;
@@ -371,6 +383,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortBy>("score_desc");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const [minCeilingHeight, setMinCeilingHeight] = useState<number | undefined>(undefined);
+  const [areaIdeal, setAreaIdeal] = useState<boolean | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const [isScraping, setIsScraping] = useState(false);
 
@@ -393,21 +407,21 @@ export default function Home() {
     onMutate: async ({ id, status }) => {
       // Optimistic update
       await utils.listings.list.cancel();
-      const prev = utils.listings.list.getData({ platform, status: statusFilter, sortBy, limit: LIMIT, offset });
+      const prev = utils.listings.list.getData({ platform, status: statusFilter, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset });
       utils.listings.list.setData(
-        { platform, status: statusFilter, sortBy, limit: LIMIT, offset },
+        { platform, status: statusFilter, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset },
         (old) => old ? { ...old, items: old.items.map((item) => item.id === id ? { ...item, status } : item) } : old
       );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) utils.listings.list.setData({ platform, status: statusFilter, sortBy, limit: LIMIT, offset }, ctx.prev);
+      if (ctx?.prev) utils.listings.list.setData({ platform, status: statusFilter, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset }, ctx.prev);
     },
     onSettled: () => utils.listings.list.invalidate(),
   });
 
   const { data, isLoading, refetch } = trpc.listings.list.useQuery(
-    { platform, status: statusFilter, sortBy, limit: LIMIT, offset },
+    { platform, status: statusFilter, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset },
     { refetchInterval: 120000 }
   );
   const { data: stats } = trpc.listings.stats.useQuery(undefined, { refetchInterval: 60000 });
@@ -598,6 +612,50 @@ export default function Home() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Ceiling height + area filter chips */}
+        <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+          <button
+            onClick={() => { setMinCeilingHeight(undefined); setOffset(0); }}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              minCeilingHeight === undefined
+                ? "bg-muted text-foreground border-border"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            ↕ Все потолки
+          </button>
+          <button
+            onClick={() => { setMinCeilingHeight(270); setOffset(0); }}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              minCeilingHeight === 270
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            ↕ ≥ 2.7 м
+          </button>
+          <button
+            onClick={() => { setMinCeilingHeight(300); setOffset(0); }}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              minCeilingHeight === 300
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            ↕ ≥ 3 м
+          </button>
+          <button
+            onClick={() => { setAreaIdeal(!areaIdeal); setOffset(0); }}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+              areaIdeal
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            📐 30–60 м²
+          </button>
         </div>
 
         {/* Platform filter chips */}

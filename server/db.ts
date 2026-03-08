@@ -113,6 +113,8 @@ export async function getListings(opts: {
   isSent?: boolean;
   status?: "new" | "not_interesting" | "interesting";
   sortBy?: "score_desc" | "score_asc" | "date_desc" | "price_asc" | "price_desc";
+  minCeilingHeight?: number; // in cm
+  areaIdeal?: boolean; // only 30-60 m²
   limit?: number;
   offset?: number;
 }) {
@@ -124,6 +126,14 @@ export async function getListings(opts: {
   if (opts.isNew !== undefined) conditions.push(eq(listings.isNew, opts.isNew));
   if (opts.isSent !== undefined) conditions.push(eq(listings.isSent, opts.isSent));
   if (opts.status !== undefined) conditions.push(eq(listings.status, opts.status));
+  if (opts.minCeilingHeight !== undefined) {
+    conditions.push(
+      sql`(\`ceilingHeight\` IS NULL OR \`ceilingHeight\` >= ${opts.minCeilingHeight})`
+    );
+  }
+  if (opts.areaIdeal) {
+    conditions.push(sql`(\`area\` IS NULL OR (\`area\` >= 30 AND \`area\` <= 60))`);
+  }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
   const limit = opts.limit ?? 20;
@@ -160,7 +170,21 @@ export async function getListings(opts: {
       .where(where),
   ]);
 
-  return { items, total: Number(countResult[0]?.count ?? 0) };
+  // Attach score breakdown to each item
+  const { scoreListing } = await import("./utils/scoreListing");
+  const itemsWithBreakdown = items.map((item) => ({
+    ...item,
+    scoreBreakdown: scoreListing({
+      floor: item.floor ?? undefined,
+      totalFloors: item.totalFloors ?? undefined,
+      ceilingHeight: (item.ceilingHeight as number | null) ?? undefined,
+      area: (item.area as number | null) ?? undefined,
+      title: item.title ?? undefined,
+      description: item.description ?? undefined,
+    }),
+  }));
+
+  return { items: itemsWithBreakdown, total: Number(countResult[0]?.count ?? 0) };
 }
 
 export async function getListingStats() {

@@ -386,3 +386,6 @@
 - [x] Add CIAN price backfill: investigated - CIAN returns captcha for HTTP requests, backfill not possible without browser session
 - [x] Add area scoring: 30-60m² ideal (+20), <25m² unusable (-50), 25-30m² small (+10), 60-70m² large (+10), >70m² too large (0)
 - [x] Fix publish/build error (second occurrence): build passes locally, creating fresh checkpoint
+- [x] Add score breakdown tooltip on listing card score badge (floor/entrance/ceiling/area breakdown)
+- [x] Add ceiling height filter on main page (≥2.7m / ≥3m)
+- [x] Add area filter on main page (30-60m² only)
