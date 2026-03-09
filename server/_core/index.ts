@@ -84,7 +84,7 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
     // Start the 30-minute monitoring scheduler
-    startScheduler();
+    startScheduler().catch(console.error);
     // Register Telegram webhook for callback_query (inline keyboard buttons)
     const appId = process.env.VITE_APP_ID ?? "";
     if (appId) {

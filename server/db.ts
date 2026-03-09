@@ -347,6 +347,7 @@ export async function updateTelegramConfig(
     chatId: string;
     active: boolean;
     initialBulkSent: boolean;
+    reportIntervalHours: number;
     threadNew: number | null;
     threadInteresting: number | null;
     threadNotInteresting: number | null;

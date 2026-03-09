@@ -94,6 +94,7 @@ export const telegramConfig = mysqlTable("telegramConfig", {
   chatId: varchar("chatId", { length: 64 }),
   active: boolean("active").default(false).notNull(),
   initialBulkSent: boolean("initialBulkSent").default(false).notNull(),
+  reportIntervalHours: int("reportIntervalHours").default(1).notNull(), // 1 | 3 | 6 | 12 | 24
   // Telegram Topics (Forum) thread IDs
   threadNew: int("threadNew"),        // Topic for new listings
   threadInteresting: int("threadInteresting"), // Topic for interesting listings

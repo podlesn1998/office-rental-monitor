@@ -133,6 +133,7 @@ export const appRouter = router({
           botToken: z.string().min(10).optional(),
           chatId: z.string().min(1).optional(),
           active: z.boolean().optional(),
+          reportIntervalHours: z.number().int().min(1).max(24).optional(),
           threadNew: z.number().int().nullable().optional(),
           threadInteresting: z.number().int().nullable().optional(),
           threadNotInteresting: z.number().int().nullable().optional(),
@@ -140,6 +141,11 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         await updateTelegramConfig(input);
+        // If interval changed, reschedule the report timer
+        if (input.reportIntervalHours !== undefined) {
+          const { rescheduleReport } = await import("./scheduler");
+          rescheduleReport(input.reportIntervalHours);
+        }
         return { success: true };
       }),
 

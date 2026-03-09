@@ -148,7 +148,7 @@ async function sendHourlyReport(): Promise<void> {
 /**
  * Start the 30-minute monitoring scheduler and hourly report.
  */
-export function startScheduler(): void {
+export async function startScheduler(): Promise<void> {
   if (schedulerInterval) {
     console.log("[Scheduler] Already started");
     return;
@@ -167,23 +167,73 @@ export function startScheduler(): void {
     await runMonitoringCycle();
   }, INTERVAL_MS);
 
-  // Hourly report — aligned to clock hour boundary (e.g. 19:00, 20:00)
-  // This prevents double-sends when server restarts mid-hour
+  // Read report interval from DB (default 1h if not configured)
+  let intervalHours = 1;
+  try {
+    const config = await getTelegramConfig();
+    if (config?.reportIntervalHours && config.reportIntervalHours > 0) {
+      intervalHours = config.reportIntervalHours;
+    }
+  } catch {
+    // DB may not be ready yet — use default
+  }
+
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+
+  // Align first report to the next multiple of intervalHours past midnight
   const now = new Date();
-  const msUntilNextHour =
-    (60 - now.getMinutes()) * 60 * 1000 -
-    now.getSeconds() * 1000 -
-    now.getMilliseconds();
-  const minUntilNextHour = Math.round(msUntilNextHour / 60000);
-  console.log(`[Scheduler] Hourly report aligned to clock hour — first report in ${minUntilNextHour} min.`);
+  const midnightMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const msSinceMidnight = now.getTime() - midnightMs;
+  const msUntilNext = intervalMs - (msSinceMidnight % intervalMs);
+  const minUntilNext = Math.round(msUntilNext / 60000);
+  console.log(`[Scheduler] Report interval: every ${intervalHours}h — first report in ${minUntilNext} min.`);
+
   setTimeout(() => {
     sendHourlyReport().catch(console.error);
     hourlyReportInterval = setInterval(async () => {
       await sendHourlyReport();
-    }, 60 * 60 * 1000);
-  }, msUntilNextHour);
+    }, intervalMs);
+  }, msUntilNext);
 
-  console.log(`[Scheduler] Scheduler started. First run in 2 minutes, then every 30 minutes. Hourly reports enabled.`);
+  console.log(`[Scheduler] Scheduler started. First run in 2 minutes, then every 30 minutes. Reports every ${intervalHours}h.`);
+}
+
+/**
+ * Reschedule the periodic report with a new interval (in hours).
+ * Cancels the current timer and starts a new one aligned to clock boundaries.
+ */
+export function rescheduleReport(intervalHours: number): void {
+  if (hourlyReportInterval) {
+    clearInterval(hourlyReportInterval);
+    hourlyReportInterval = null;
+  }
+
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+
+  // Align first report to the next multiple of intervalHours past midnight
+  const now = new Date();
+  const nowMs = now.getTime();
+  const midnightMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const msSinceMidnight = nowMs - midnightMs;
+  const msUntilNext = intervalMs - (msSinceMidnight % intervalMs);
+  const minUntilNext = Math.round(msUntilNext / 60000);
+
+  console.log(`[Scheduler] Rescheduling report: every ${intervalHours}h, first in ${minUntilNext} min`);
+
+  // Reset stats so the first report covers only the new period
+  hourlyStats.cyclesRun = 0;
+  hourlyStats.cyclesTimedOut = 0;
+  hourlyStats.cyclesErrored = 0;
+  hourlyStats.newListingsFound = 0;
+  hourlyStats.notificationsSent = 0;
+  hourlyStats.hourStart = Date.now();
+
+  setTimeout(() => {
+    sendHourlyReport().catch(console.error);
+    hourlyReportInterval = setInterval(async () => {
+      await sendHourlyReport();
+    }, intervalMs);
+  }, msUntilNext);
 }
 
 /**

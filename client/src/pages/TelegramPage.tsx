@@ -26,6 +26,7 @@ export default function TelegramPage() {
   const [threadNotInteresting, setThreadNotInteresting] = useState("");
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [silentSave, setSilentSave] = useState(false);
+  const [reportIntervalHours, setReportIntervalHours] = useState(1);
 
   useEffect(() => {
     if (config) {
@@ -34,6 +35,7 @@ export default function TelegramPage() {
       setThreadNew(config.threadNew != null ? String(config.threadNew) : "");
       setThreadInteresting(config.threadInteresting != null ? String(config.threadInteresting) : "");
       setThreadNotInteresting(config.threadNotInteresting != null ? String(config.threadNotInteresting) : "");
+      setReportIntervalHours((config as any).reportIntervalHours ?? 1);
     }
   }, [config]);
 
@@ -89,7 +91,7 @@ export default function TelegramPage() {
   });
 
   const handleSave = () => {
-    const data: Record<string, unknown> = { active };
+    const data: Record<string, unknown> = { active, reportIntervalHours };
     if (botToken) data.botToken = botToken;
     if (chatId) data.chatId = chatId;
     data.threadNew = threadNew ? parseInt(threadNew, 10) : null;
@@ -221,6 +223,38 @@ export default function TelegramPage() {
                 className="bg-background border-border"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Report frequency */}
+        <div className="bg-card rounded-2xl p-4 border border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Bot size={16} className="text-primary" />
+            <span className="font-medium text-foreground">Частота отчётов</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Как часто бот присылает сводку: циклов выполнено, новых объявлений, ошибок
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { value: 1,  label: "1 ч" },
+              { value: 3,  label: "3 ч" },
+              { value: 6,  label: "6 ч" },
+              { value: 12, label: "12 ч" },
+              { value: 24, label: "Сутки" },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setReportIntervalHours(value)}
+                className={`flex-1 min-w-[56px] text-sm py-2 rounded-xl border transition-colors ${
+                  reportIntervalHours === value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-border hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
