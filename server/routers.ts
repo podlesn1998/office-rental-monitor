@@ -50,7 +50,7 @@ export const appRouter = router({
           platform: z.enum(["cian", "avito", "yandex"]).optional(),
           isNew: z.boolean().optional(),
           status: z.enum(["new", "not_interesting", "interesting"]).optional(),
-          sortBy: z.enum(["score_desc", "score_asc", "date_desc", "price_asc", "price_desc"]).optional(),
+          sortBy: z.enum(["score_desc", "score_asc", "date_desc", "date_asc", "price_asc", "price_desc"]).optional(),
           minCeilingHeight: z.number().optional(), // in cm
           areaIdeal: z.boolean().optional(),
           limit: z.number().min(1).max(100).default(20),

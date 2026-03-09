@@ -112,7 +112,7 @@ export async function getListings(opts: {
   isNew?: boolean;
   isSent?: boolean;
   status?: "new" | "not_interesting" | "interesting";
-  sortBy?: "score_desc" | "score_asc" | "date_desc" | "price_asc" | "price_desc";
+  sortBy?: "score_desc" | "score_asc" | "date_desc" | "date_asc" | "price_asc" | "price_desc";
   minCeilingHeight?: number; // in cm
   areaIdeal?: boolean; // only 30-60 m²
   limit?: number;
@@ -148,6 +148,8 @@ export async function getListings(opts: {
     orderClause = [asc(listings.score), desc(listings.firstSeen)];
   } else if (sortBy === "date_desc") {
     orderClause = [desc(listings.firstSeen)];
+  } else if (sortBy === "date_asc") {
+    orderClause = [asc(listings.firstSeen)];
   } else if (sortBy === "price_asc") {
     orderClause = [asc(listings.price), desc(listings.firstSeen)];
   } else if (sortBy === "price_desc") {

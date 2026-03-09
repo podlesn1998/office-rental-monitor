@@ -38,12 +38,13 @@ const PLATFORM_COLORS: Record<Platform, string> = {
 };
 
 type ListingStatus = "new" | "not_interesting" | "interesting";
-type SortBy = "score_desc" | "score_asc" | "date_desc" | "price_asc" | "price_desc";
+type SortBy = "score_desc" | "score_asc" | "date_desc" | "date_asc" | "price_asc" | "price_desc";
 
 const SORT_LABELS: Record<SortBy, string> = {
   score_desc: "По оценке ↓",
   score_asc: "По оценке ↑",
-  date_desc: "По дате",
+  date_desc: "Сначала новые",
+  date_asc: "Сначала старые",
   price_asc: "По цене ↑",
   price_desc: "По цене ↓",
 };
