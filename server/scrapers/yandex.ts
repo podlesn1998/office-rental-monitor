@@ -277,15 +277,50 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
       }
       console.log(`[Yandex] Page ${pageNum} title: ${title}`);
 
-      if (
+      const isCaptchaPage =
         title.toLowerCase().includes("captcha") ||
         title.toLowerCase().includes("robot") ||
         title.includes("404") ||
         title.toLowerCase().includes("не робот") ||
-        title.toLowerCase().includes("робот")
-      ) {
-        console.log(`[Yandex] Captcha/robot check detected, stopping`);
-        break;
+        title.toLowerCase().includes("робот");
+
+      if (isCaptchaPage) {
+        console.log(`[Yandex] Captcha/robot check detected on page ${pageNum}, trying checkbox click...`);
+
+        // Яндекс Недвижимость использует checkbox-капчу (не SmartCaptcha).
+        // Клик по кнопке + ожидание загрузки объявлений — самый надёжный способ.
+        const clicked = await page.evaluate(() => {
+          const btn = (document.querySelector('#js-button') ||
+                       document.querySelector('.CheckboxCaptcha-Button')) as HTMLElement | null;
+          if (btn) { btn.click(); return true; }
+          return false;
+        });
+
+        if (clicked) {
+          console.log(`[Yandex] Clicked checkbox, waiting for listings...`);
+          try {
+            await page.waitForSelector('a[href*="/offer/"]', { timeout: 15000 });
+            console.log(`[Yandex] Listings appeared after checkbox click!`);
+          } catch {
+            console.log(`[Yandex] No listings after checkbox click, stopping`);
+            break;
+          }
+
+          const newTitle = await page.title().catch(() => '');
+          const stillCaptcha = newTitle.toLowerCase().includes('captcha') ||
+            newTitle.toLowerCase().includes('робот') ||
+            newTitle.toLowerCase().includes('robot');
+
+          if (stillCaptcha) {
+            console.log(`[Yandex] Still on captcha page after click, stopping`);
+            break;
+          }
+          console.log(`[Yandex] Captcha bypassed via checkbox click!`);
+          await randomDelay(2000, 3000);
+        } else {
+          console.log(`[Yandex] Checkbox button not found, stopping`);
+          break;
+        }
       }
 
       const cards = await parseYandexPage(page);

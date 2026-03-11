@@ -396,3 +396,6 @@
 - [x] Add playwright-extra stealth plugin to Yandex scraper
 - [x] Add random delays and human-like behavior to Yandex scraper
 - [x] Add Yandex session persistence (save/load cookies)
+- [x] Integrate rucaptcha API for Yandex SmartCaptcha solving
+- [x] Add RUCAPTCHA_API_KEY secret
+- [x] Implement captcha detection + solving in Yandex scraper (checkbox click; Yandex uses PoW captcha, not SmartCaptcha)
