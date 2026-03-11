@@ -10,7 +10,6 @@ import {
   ArrowUpDown,
   ExternalLink,
   Building2,
-  Filter,
   Layers,
   Map,
   Eye,
@@ -566,7 +565,7 @@ export default function Home() {
                 : "bg-card text-muted-foreground border-border hover:text-foreground"
             }`}
           >
-            <Filter size={11} /> Новые
+            <Clock size={11} /> Очередь
           </button>
           <button
             onClick={() => { setStatusFilter("interesting"); setOffset(0); }}

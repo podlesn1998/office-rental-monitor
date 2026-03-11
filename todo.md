@@ -406,3 +406,8 @@
 - [x] Implement proxy rotation helper (proxyLine.ts)
 - [x] Integrate proxy into Yandex scraper browser launch
 - [x] Test page 2+ scraping with proxy (needs proxies purchased in ProxyLine account)
+
+## Feature: Queue filter tab
+- [x] Add "queue" as a filter value (listings where status = "new", i.e. not yet rated)
+- [x] Update backend getListings to support status="queue" (reuses existing status="new")
+- [x] Add Queue button to filter bar in Home.tsx (renamed "Новые" → "Очередь")
