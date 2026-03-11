@@ -393,3 +393,6 @@
 - [x] Make top stats counters (total/CIAN/Yandex/Avito) respect active filters (status, platform, ceiling, area, sortBy)
 - [x] Add configurable Telegram report frequency (1h/3h/6h/12h/24h) in Settings
 - [x] Add date_asc (oldest first) sort option alongside existing date_desc
+- [x] Add playwright-extra stealth plugin to Yandex scraper
+- [x] Add random delays and human-like behavior to Yandex scraper
+- [x] Add Yandex session persistence (save/load cookies)

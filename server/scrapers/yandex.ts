@@ -1,5 +1,5 @@
 import type { InsertListing } from "../../drizzle/schema";
-import { createStealthPage } from "./browser";
+import { createYandexStealthPage, saveYandexSession } from "./browser";
 import type { SearchParams } from "./index";
 import { guessDistrict } from "./district";
 
@@ -22,6 +22,33 @@ function buildYandexUrl(params: SearchParams, page = 1): string {
   if (params.maxPrice) url.searchParams.set("priceMax", String(params.maxPrice));
   if (page > 1) url.searchParams.set("page", String(page));
   return url.toString();
+}
+
+/** Random delay between minMs and maxMs milliseconds */
+function randomDelay(minMs: number, maxMs: number): Promise<void> {
+  const ms = minMs + Math.random() * (maxMs - minMs);
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Simulate human-like mouse movement and scroll on the page */
+async function humanBehavior(page: import("playwright-core").Page): Promise<void> {
+  try {
+    // Random mouse move
+    const x = 200 + Math.random() * 800;
+    const y = 100 + Math.random() * 500;
+    await page.mouse.move(x, y, { steps: 5 + Math.floor(Math.random() * 10) });
+
+    // Random scroll down
+    const scrollY = 300 + Math.random() * 400;
+    await page.evaluate((sy) => window.scrollBy({ top: sy, behavior: "smooth" }), scrollY);
+    await randomDelay(500, 1200);
+
+    // Scroll back up a bit
+    await page.evaluate(() => window.scrollBy({ top: -100, behavior: "smooth" }));
+    await randomDelay(300, 700);
+  } catch {
+    // ignore — page may have navigated
+  }
 }
 
 async function parseYandexPage(page: import("playwright-core").Page): Promise<Array<{
@@ -59,37 +86,29 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
 
       const fullText = container.textContent ?? "";
 
-      // Extract price: find digits immediately before ₽ (after stripping whitespace)
-      // Use a dedicated price element first, fall back to regex on stripped text
       const priceEl = container.querySelector('[class*="price"], [class*="Price"], [class*="cost"], [class*="Cost"]');
       let price: number | null = null;
       if (priceEl) {
-        // Strip all whitespace to handle "133 200₽" → "133200₽"
         const priceText = priceEl.textContent?.replace(/[\s\u00a0]/g, "") ?? "";
         const m = priceText.match(/(\d{4,})₽/);
         if (m) price = parseInt(m[1]);
       }
       if (!price) {
-        // Fallback: strip all whitespace from full text and find digits before ₽
         const stripped = fullText.replace(/[\s\u00a0]/g, "");
         const m = stripped.match(/(\d{4,})₽/);
         if (m) price = parseInt(m[1]);
       }
-      // Sanity check: monthly office rent should not exceed 5,000,000 ₽
       if (price && price > 5000000) price = null;
 
-      // Read title first — Yandex titles reliably contain area as "XX м² · офис"
       const titleEl = container.querySelector('[class*="title"], [class*="Title"]');
       const titleText = titleEl?.textContent?.trim() ?? "";
 
-      // Extract area from title first (most reliable for Yandex)
       let area: number | null = null;
       const titleAreaMatch = titleText.match(/(\d+[,.]?\d*)\s*м²/);
       if (titleAreaMatch) {
         const val = parseFloat(titleAreaMatch[1].replace(",", "."));
         if (val >= 10 && val <= 500) area = val;
       }
-      // Fallback: scan fullText if title didn't yield area
       if (!area) {
         const areaRe = /(\d+[,.]?\d*)\s*м²/g;
         let areaM: RegExpExecArray | null;
@@ -116,7 +135,6 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
       const addressEl = container.querySelector('[class*="address"], [class*="Address"], [class*="location"], [class*="Location"]');
       const address = addressEl?.textContent?.trim() ?? "";
 
-      // Extract ceiling height from card text
       let ceilingHeight: number | null = null;
       const ceilMatch = fullText.match(/(?:потолк[иа]?|высот[аы]\s+потолк[иа]?)[^\d]*(\d+[,.]?\d*)\s*м/i)
         || fullText.match(/высот[аы][^\d]*(\d+[,.]?\d*)\s*м/i);
@@ -125,12 +143,9 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
         if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
       }
 
-      // Extract floor: patterns like "1/5 эт.", "этаж 2 из 9", "2 этаж", "1-й этаж"
-      // Yandex title format: "60 м² · офис · 3 этаж из 5C" (letter suffix like C/B for class)
       let floor: number | null = null;
       let totalFloors: number | null = null;
 
-      // First try title — most reliable for Yandex (format: "N этаж из M[A-Z]?")
       const titleFloorMatch = titleText.match(/(\d+)\s*этаж\s+из\s+(\d+)[A-Z]?/i);
       if (titleFloorMatch) {
         const f = parseInt(titleFloorMatch[1]);
@@ -138,7 +153,6 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
         if (f >= 1 && f <= 100 && t >= 1) { floor = f; totalFloors = t; }
       }
 
-      // Pattern: "N/M эт." or "этаж N из M" or "N из M эт" (with optional letter suffix)
       if (floor === null) {
         const floorSlashMatch = fullText.match(/(\d+)\s*\/\s*(\d+)\s*эт/i)
           || fullText.match(/этаж\s+(\d+)\s+из\s+(\d+)[A-Z]?/i)
@@ -150,7 +164,6 @@ async function parseYandexPage(page: import("playwright-core").Page): Promise<Ar
           if (f >= 1 && f <= 100 && t >= 1) { floor = f; if (!totalFloors) totalFloors = t; }
         }
       }
-      // Pattern: "2 этаж" or "2-й этаж" or "этаж 2" (without total)
       if (floor === null) {
         const floorSingleMatch = fullText.match(/(\d+)[-й]?\s*этаж/i)
           || fullText.match(/этаж\s*(\d+)/i);
@@ -188,14 +201,12 @@ async function fetchYandexOfferDetails(
     let ceilingHeight: number | null = null;
     let entranceSeparate = false;
 
-    // Helper to validate and normalize ceiling height value
     const normalizeCeiling = (val: number): number | null => {
-      if (val >= 200 && val <= 600) return Math.round(val); // already in cm
-      if (val >= 2 && val <= 6) return Math.round(val * 100); // in meters
-      return null; // out of range (e.g. 9m = 900cm is likely bad data)
+      if (val >= 200 && val <= 600) return Math.round(val);
+      if (val >= 2 && val <= 6) return Math.round(val * 100);
+      return null;
     };
 
-    // Try __NEXT_DATA__ JSON first
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
     if (nextDataMatch) {
       try {
@@ -209,13 +220,11 @@ async function fetchYandexOfferDetails(
       } catch { /* ignore */ }
     }
 
-    // Fallback: search directly in raw HTML (works for ROUTER_SNAPSHOT pages)
     if (ceilingHeight === null) {
       const ceilJsonMatch = html.match(/"ceilingHeight"\s*:\s*([\d.]+)/);
       if (ceilJsonMatch) ceilingHeight = normalizeCeiling(parseFloat(ceilJsonMatch[1]));
     }
 
-    // Fallback: human-readable text in HTML
     if (ceilingHeight === null) {
       const textMatch = html.match(/Высота потолков[^<]{0,30}([\d,\.]+)\s*[мm]/i);
       if (textMatch) ceilingHeight = normalizeCeiling(parseFloat(textMatch[1].replace(",", ".")));
@@ -233,7 +242,7 @@ async function fetchYandexOfferDetails(
 
 export async function scrapeYandex(params: SearchParams): Promise<InsertListing[]> {
   const results: InsertListing[] = [];
-  const { page, context } = await createStealthPage();
+  const { page, context } = await createYandexStealthPage();
   const maxPages = params.maxPages ?? 2;
 
   try {
@@ -246,13 +255,19 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
       } catch (navErr) {
         console.warn("[Yandex] Navigation warning:", navErr instanceof Error ? navErr.message : navErr);
       }
+
+      // Human-like behavior: move mouse and scroll before waiting for cards
+      await humanBehavior(page);
+
       // Wait for React to render listing cards
       try {
         await page.waitForSelector('a[href*="/offer/"]', { timeout: 12000 });
       } catch {
         // Cards might not appear (captcha or empty page)
       }
-      await page.waitForTimeout(pageNum === 1 ? 3000 : 2000);
+
+      // Random delay mimicking reading time (longer on first page)
+      await randomDelay(pageNum === 1 ? 4000 : 3000, pageNum === 1 ? 8000 : 6000);
 
       let title = "";
       try {
@@ -269,7 +284,7 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
         title.toLowerCase().includes("не робот") ||
         title.toLowerCase().includes("робот")
       ) {
-        console.warn("[Yandex] Captcha/robot check detected, stopping");
+        console.log(`[Yandex] Captcha/robot check detected, stopping`);
         break;
       }
 
@@ -285,7 +300,7 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
       for (const card of cards) {
         if (existingIds.has(card.id)) continue;
 
-        // Fetch detail page via HTTP to get ceiling height from О доме section
+        // Fetch detail page via HTTP to get ceiling height
         let detailCeilingHeight = card.ceilingHeight;
         let detailEntranceSeparate = false;
         if (card.href) {
@@ -299,20 +314,14 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
           } catch (detailErr) {
             console.warn(`[Yandex] Detail fetch error for ${card.id}:`, detailErr instanceof Error ? detailErr.message : detailErr);
           }
-          // Small delay to avoid rate limiting
-          await new Promise(r => setTimeout(r, 1500));
-        }
-
-        // Build title with entrance info if found on detail page
-        let titleWithEntrance = card.title || null;
-        if (detailEntranceSeparate && titleWithEntrance && !titleWithEntrance.toLowerCase().includes('отдельн')) {
-          // We'll store this info in description for scoring purposes
+          // Random delay between detail fetches (avoid rate limiting)
+          await randomDelay(1000, 2500);
         }
 
         results.push({
           platform: "yandex",
           platformId: card.id,
-          title: titleWithEntrance,
+          title: card.title || null,
           address: card.address || null,
           district: guessDistrict(card.address),
           metroStation: card.metro || null,
@@ -335,9 +344,16 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
       }
 
       if (pageNum < maxPages) {
-        await page.waitForTimeout(2000);
+        // Random inter-page delay: 5–12 seconds (mimics reading the page)
+        const delaySec = (5 + Math.random() * 7).toFixed(1);
+        console.log(`[Yandex] Waiting ${delaySec}s before page ${pageNum + 1}...`);
+        await randomDelay(5000, 12000);
       }
     }
+
+    // Save session after successful scrape so cookies stay fresh
+    await saveYandexSession(context);
+
   } catch (err) {
     console.error("[Yandex] Scraper error:", err instanceof Error ? err.message : err);
   } finally {
@@ -348,7 +364,7 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
   if (params.districts && params.districts.length > 0) {
     const before = results.length;
     const filtered = results.filter((r) => {
-      if (!r.district) return false; // exclude if district cannot be determined
+      if (!r.district) return false;
       return params.districts.includes(r.district);
     });
     console.log(`[Yandex] District filter: ${before} → ${filtered.length} listings (districts: ${params.districts.join(", ")})`);

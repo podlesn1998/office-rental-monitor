@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT \n  COUNT(*) as total,\n  MIN(firstSeen) as oldest,\n  MAX(firstSeen) as newest,\n  SUM(CASE WHEN firstSeen > (UNIX_TIMESTAMP() - 86400) * 1000 THEN 1 ELSE 0 END) as last_24h,\n  SUM(CASE WHEN firstSeen > (UNIX_TIMESTAMP() - 172800) * 1000 THEN 1 ELSE 0 END) as last_48h\nFROM listings;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute \nSELECT \n  COUNT(*) as total,\n  MIN(firstSeen) as oldest,\n  MAX(firstSeen) as newest,\n  SUM(CASE WHEN firstSeen > (UNIX_TIMESTAMP() - 86400) * 1000 THEN 1 ELSE 0 END) as last_24h,\n  SUM(CASE WHEN firstSeen > (UNIX_TIMESTAMP() - 172800) * 1000 THEN 1 ELSE 0 END) as last_48h\nFROM listings;\n",
+  "rows": [
+    {
+      "total": "99",
+      "oldest": "2026-03-01 21:57:40",
+      "newest": "2026-03-08 14:37:25",
+      "last_24h": "99",
+      "last_48h": "99"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\toldest\tnewest\tlast_24h\tlast_48h\n99\t2026-03-01 21:57:40\t2026-03-08 14:37:25\t99\t99\n",
+  "stderr": "",
+  "execution_time_ms": 379
+}
