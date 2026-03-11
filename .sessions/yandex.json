@@ -55,7 +55,7 @@
       "value": "417899",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1807775852.417507,
+      "expires": 1807778004.656436,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -65,7 +65,7 @@
       "value": "2",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1807775852.418255,
+      "expires": 1807778004.65723,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -75,7 +75,7 @@
       "value": "10174",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1807775852.419266,
+      "expires": 1807778004.658042,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -205,8 +205,38 @@
       "sameSite": "None"
     },
     {
+      "name": "_yasc",
+      "value": "RFhfkHRcyMxE7XQkuYsottNlQr9KNB70Y0qQhDTSOONqo7tCE1sVOZF9+rAVXHl1eD/SkaLcJhfJ",
+      "domain": ".yandex.ru",
+      "path": "/",
+      "expires": 1807776435.903577,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "prev_uaas_data",
+      "value": "%7B%22uaasExpNames%22%3A%5B%22REALTYBACK-16541-linear_bid_for_newbuildings_ranking%22%2C%22VSML_model_listing_ranker_rev3_2025_11_02_geo_coords.cbm%22%2C%22REALTYFRONT-24169_redirect_podbor_landing_to_quiz%22%2C%22ARENDA_RENT_EVALUATION_BANNER%22%2C%22REALTYFRONT-27030_legal_entity_psp_transition%22%2C%22REALTYFRONT-26236_show_ad%22%2C%22REALTYFRONT-26851_service_quiz_disable_phone_autocomplete%22%2C%22REALTYFRONT-28674_owner_flat_tenant_candidate_groups_deadline%22%2C%22REALTYFRONT-29138_realty-ai-agent-entry-points%22%2C%22REALTYFRONT-16113_bring_tenant_banner%22%2C%22REALTYFRONT-16792_show_arenda_chat_button%22%2C%22REALTYFRONT-17599_new_owner_target%22%2C%22REALTYFRONT-19425_redesign_site_plans_modals%22%2C%22REALTYFRONT-18481_verticals_3d_tour%22%2C%22REALTYFRONT-20711_quick_request_for_an_impression%22%2C%22REALTYFRONT-21701_owner_get_consultation_target%22%2C%22REALTYBACK-13472_newbuilding_rate_change%22%2C%22REALTYFRONT-18560_realty_hidden_flat_number%22%2C%22REALTYFRONT-22002_show_podbor_pdf_for_mobile_number_banners%22%2C%22REALTYFRONT-21695_show_new_landing_owner%22%2C%22REALTYFRONT-22452_new_podbor_entrypoints%22%2C%22REALTYFRONT-18660_additional_cta_on_paid_site_card%22%2C%22REALTYFRONT-23113_podbor_site_and_offer_cards_mortgage_calc_up%22%2C%22REALTYFRONT-22354_redesign_samolet_gallery%22%2C%22REALTYFRONT-20932_without_newbuilding_carousel%22%2C%22REALTYFRONT-23562_show_offer_draft_agents_promo%22%2C%22REALTYFRONT-25094_show_banner_secondary_agents_promo%22%2C%22REALTYFRONT-24711_landing_referral_cat%22%2C%22REALTYFRONT-28655_developer_price%22%2C%22REALTYFRONT-25800_show_agent_secondary_promo_quiz_estimation%22%2C%22REALTYFRONT-21285_show_arenda_calculator_banner%22%2C%22REALTYFRONT-21278_hidden_price_desc%22%2C%22realty_aa_experiment%22%5D%2C%22uaasUid%22%3A%227926646141773210561%22%7D",
+      "domain": "realty.yandex.ru",
+      "path": "/",
+      "expires": 1773218318.696485,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "prev_uaas_expcrypted",
+      "value": "lC2aTXxDcLAKwD-R4ZkmQfrTdTKpmegj6hCxq2slA59d-MS3t_wGS9-ZmPmemS-0T63-nrzfoup77HhEX9I9zWf9rbD-XMc-E548wpT1mBLvfCHVqrAZ8KOnBxYrgc8a-SBRG30I9yKK76PY7Ta0eEzV3n36ydtCiCavcvylU0mulEp0cDRI9YIpDUk-me0_7EXBbRbGJgYHtrLuv94pKMucYp5_rSOMlU5andRSauYItQnr-3ob43CD4vBx-G2f4haiIyhPYH0JStmTExgkxaHQfYc6OZAIFZWfx5nW2PERZvNeN9HHYxW6Ns7Z_RKeIkb2RrlAqwCUsteujrwwoCOXHvCmo4WjsI9dQFF7tngp8RrIQwLDM5hB0lyGyuC4OhJwOqJQqdh_AnbmxPV-TA%2C%2C",
+      "domain": "realty.yandex.ru",
+      "path": "/",
+      "expires": 1773218318.696538,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
       "name": "from_lifetime",
-      "value": "1773215856276",
+      "value": "1773218018120",
       "domain": "realty.yandex.ru",
       "path": "/",
       "expires": -1,
@@ -216,23 +246,13 @@
     },
     {
       "name": "bh",
-      "value": "EkIiQ2hyb21pdW0iO3Y9IjEyOCIsICIgTm90IEE7QnJhbmQiO3Y9Ijk5IiwgIkdvb2dsZSBDaHJvbWUiO3Y9IjEyOCIqAj8wOgkiV2luZG93cyJgoMLEzQZqHtzK4f8IktihsQOfz+HqA/v68OcN6//99g+2xsyHCA==",
+      "value": "EkIiQ2hyb21pdW0iO3Y9IjEyOCIsICIgTm90IEE7QnJhbmQiO3Y9Ijk5IiwgIkdvb2dsZSBDaHJvbWUiO3Y9IjEyOCIqAj8wOgkiV2luZG93cyJg5NHEzQZqHtzK4f8IktihsQOfz+HqA/v68OcN6//99g+2xsyHCA==",
       "domain": ".yandex.ru",
       "path": "/",
-      "expires": 1807776032,
+      "expires": 1807778020,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
-    },
-    {
-      "name": "_yasc",
-      "value": "RFhfkHRcyMxE7XQkuYsottNlQr9KNB70Y0qQhDTSOONqo7tCE1sVOZF9+rAVXHl1eD/SkaLcJhfJ",
-      "domain": ".yandex.ru",
-      "path": "/",
-      "expires": 1807776435.903577,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "Lax"
     }
   ],
   "origins": [
@@ -240,24 +260,16 @@
       "origin": "https://realty.yandex.ru",
       "localStorage": [
         {
-          "name": "use_app_for_five_minutes",
-          "value": "\"yes\""
-        },
-        {
           "name": "advanced-captcha-state",
           "value": "image"
         },
         {
           "name": "visit_session",
-          "value": "{\"id\":\"d5tkk2bx\",\"sessionInit\":\"2026-03-11T07:50:07.578Z\",\"sessionUpdated\":\"2026-03-11T07:57:35.392Z\"}"
+          "value": "{\"id\":\"36unwtar\",\"sessionInit\":\"2026-03-11T08:33:37.130Z\",\"sessionUpdated\":\"2026-03-11T08:33:37.130Z\"}"
         },
         {
           "name": "FILTERS_PANEL_SEARCH_SUBSCRIPTION_TOOLTIP_KEY",
           "value": "{\"value\":true}"
-        },
-        {
-          "name": "use_app_for_six_minutes",
-          "value": "\"yes\""
         }
       ]
     }

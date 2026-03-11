@@ -1,5 +1,5 @@
 import type { InsertListing } from "../../drizzle/schema";
-import { createYandexStealthPage, saveYandexSession } from "./browser";
+import { createYandexStealthPage, saveYandexSession, refreshProxies } from "./browser";
 import type { SearchParams } from "./index";
 import { guessDistrict } from "./district";
 
@@ -242,8 +242,13 @@ async function fetchYandexOfferDetails(
 
 export async function scrapeYandex(params: SearchParams): Promise<InsertListing[]> {
   const results: InsertListing[] = [];
-  const { page, context } = await createYandexStealthPage();
   const maxPages = params.maxPages ?? 2;
+
+  // Try without proxy first (faster). If captcha is hit on page 1, retry with proxy.
+  // For pages 2+, always use proxy if available.
+  const { page, context, proxyUsed } = await createYandexStealthPage(false);
+  let proxyContext: import("playwright-core").BrowserContext | null = null;
+  let proxyPage: import("playwright-core").Page | null = null;
 
   try {
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
@@ -285,10 +290,9 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
         title.toLowerCase().includes("робот");
 
       if (isCaptchaPage) {
-        console.log(`[Yandex] Captcha/robot check detected on page ${pageNum}, trying checkbox click...`);
+        console.log(`[Yandex] Captcha detected on page ${pageNum}`);
 
-        // Яндекс Недвижимость использует checkbox-капчу (не SmartCaptcha).
-        // Клик по кнопке + ожидание загрузки объявлений — самый надёжный способ.
+        // Step 1: Try checkbox click (works sometimes on page 1 with fresh session)
         const clicked = await page.evaluate(() => {
           const btn = (document.querySelector('#js-button') ||
                        document.querySelector('.CheckboxCaptcha-Button')) as HTMLElement | null;
@@ -296,30 +300,102 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
           return false;
         });
 
+        let captchaResolved = false;
         if (clicked) {
-          console.log(`[Yandex] Clicked checkbox, waiting for listings...`);
           try {
-            await page.waitForSelector('a[href*="/offer/"]', { timeout: 15000 });
-            console.log(`[Yandex] Listings appeared after checkbox click!`);
+            await page.waitForSelector('a[href*="/offer/"]', { timeout: 12000 });
+            const newTitle = await page.title().catch(() => '');
+            const stillCaptcha = newTitle.toLowerCase().includes('captcha') ||
+              newTitle.toLowerCase().includes('робот') ||
+              newTitle.toLowerCase().includes('robot');
+            if (!stillCaptcha) {
+              console.log(`[Yandex] Captcha bypassed via checkbox click!`);
+              captchaResolved = true;
+              await randomDelay(1500, 2500);
+            }
           } catch {
-            console.log(`[Yandex] No listings after checkbox click, stopping`);
+            // checkbox click didn't work
+          }
+        }
+
+        // Step 2: If checkbox didn't work, retry this page via residential proxy
+        if (!captchaResolved) {
+          console.log(`[Yandex] Checkbox failed, retrying page ${pageNum} via residential proxy...`);
+          try {
+            // Close previous proxy context if any
+            if (proxyContext) { await proxyContext.close().catch(() => {}); }
+            const proxyResult = await createYandexStealthPage(true);
+            proxyPage = proxyResult.page;
+            proxyContext = proxyResult.context;
+
+            if (!proxyResult.proxyUsed) {
+              console.log(`[Yandex] No proxy available, stopping at page ${pageNum}`);
+              break;
+            }
+
+            const proxyUrl = buildYandexUrl(params, pageNum);
+            await proxyPage.goto(proxyUrl, { waitUntil: "domcontentloaded", timeout: 40000 });
+            await humanBehavior(proxyPage);
+            try {
+              await proxyPage.waitForSelector('a[href*="/offer/"]', { timeout: 15000 });
+            } catch { /* may be captcha again */ }
+            await randomDelay(3000, 6000);
+
+            const proxyTitle = await proxyPage.title().catch(() => '');
+            const proxyHasCaptcha = proxyTitle.toLowerCase().includes('captcha') ||
+              proxyTitle.toLowerCase().includes('робот') ||
+              proxyTitle.toLowerCase().includes('robot');
+
+            if (proxyHasCaptcha) {
+              console.log(`[Yandex] Proxy also got captcha on page ${pageNum}, refreshing proxies and stopping`);
+              await refreshProxies();
+              break;
+            }
+
+            console.log(`[Yandex] Proxy page ${pageNum} loaded: ${proxyTitle}`);
+            // Parse from proxy page instead
+            const proxyCards = await parseYandexPage(proxyPage);
+            console.log(`[Yandex] Parsed ${proxyCards.length} cards via proxy from page ${pageNum}`);
+
+            if (proxyCards.length === 0) break;
+
+            const existingIds2 = new Set(results.map((r) => r.platformId));
+            for (const card of proxyCards) {
+              if (existingIds2.has(card.id)) continue;
+              let detailCeilingHeight = card.ceilingHeight;
+              let detailEntranceSeparate = false;
+              if (card.href) {
+                try {
+                  const details = await fetchYandexOfferDetails(null, card.href);
+                  if (details.ceilingHeight !== null) detailCeilingHeight = details.ceilingHeight;
+                  detailEntranceSeparate = details.entranceSeparate;
+                } catch { /* ignore */ }
+                await randomDelay(800, 2000);
+              }
+              results.push({
+                platform: "yandex", platformId: card.id, title: card.title || null,
+                address: card.address || null, district: guessDistrict(card.address),
+                metroStation: card.metro || null, metroDistanceMin: card.metroMin,
+                metroDistanceType: params.transportType, price: card.price,
+                area: card.area ? Math.round(card.area) : null,
+                floor: card.floor ?? null, totalFloors: card.totalFloors ?? null,
+                ceilingHeight: detailCeilingHeight ?? null,
+                description: detailEntranceSeparate ? 'отдельный вход' : null,
+                photos: [], url: card.href, phone: null, isNew: true, isSent: false,
+                firstSeen: new Date(), lastSeen: new Date(),
+              });
+            }
+
+            // Save proxy session cookies
+            await saveYandexSession(proxyContext);
+            // Continue to next page
+            if (pageNum < maxPages) await randomDelay(5000, 10000);
+            continue;
+          } catch (proxyErr) {
+            console.warn(`[Yandex] Proxy attempt failed:`, proxyErr instanceof Error ? proxyErr.message : proxyErr);
+            await refreshProxies();
             break;
           }
-
-          const newTitle = await page.title().catch(() => '');
-          const stillCaptcha = newTitle.toLowerCase().includes('captcha') ||
-            newTitle.toLowerCase().includes('робот') ||
-            newTitle.toLowerCase().includes('robot');
-
-          if (stillCaptcha) {
-            console.log(`[Yandex] Still on captcha page after click, stopping`);
-            break;
-          }
-          console.log(`[Yandex] Captcha bypassed via checkbox click!`);
-          await randomDelay(2000, 3000);
-        } else {
-          console.log(`[Yandex] Checkbox button not found, stopping`);
-          break;
         }
       }
 
@@ -393,6 +469,9 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
     console.error("[Yandex] Scraper error:", err instanceof Error ? err.message : err);
   } finally {
     await context.close();
+    if (proxyContext) {
+      await proxyContext.close().catch(() => {});
+    }
   }
 
   // Filter by selected districts if any are specified

@@ -3,6 +3,7 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import type { Browser, BrowserContext, Page } from "playwright-core";
 import * as fs from "fs";
 import * as path from "path";
+import { getNextProxy, refreshProxies } from "./proxyLine";
 
 // Register stealth plugin once
 chromiumExtra.use(StealthPlugin());
@@ -143,9 +144,14 @@ export async function createStealthPage(): Promise<{ page: Page; context: Browse
 
 /**
  * Create a stealth page with Yandex session cookies loaded (if available).
- * After scraping, call saveYandexSession(context) to persist updated cookies.
+ * Optionally uses a ProxyLine residential proxy to bypass IP-level captcha.
+ *
+ * @param useProxy - if true, fetch a proxy from ProxyLine and route traffic through it.
+ *                   Falls back to direct connection if no proxies are available.
  */
-export async function createYandexStealthPage(): Promise<{ page: Page; context: BrowserContext }> {
+export async function createYandexStealthPage(
+  useProxy = false
+): Promise<{ page: Page; context: BrowserContext; proxyUsed: boolean }> {
   const browser = await getBrowser();
   const ua = randomUA();
   const vp = randomViewport();
@@ -167,6 +173,20 @@ export async function createYandexStealthPage(): Promise<{ page: Page; context: 
     }
   }
 
+  // Optionally attach a residential proxy
+  let proxyConfig: { server: string; username: string; password: string } | undefined;
+  let proxyUsed = false;
+  if (useProxy) {
+    const proxy = await getNextProxy();
+    if (proxy) {
+      proxyConfig = proxy;
+      proxyUsed = true;
+      console.log(`[Yandex] Using proxy: ${proxy.server}`);
+    } else {
+      console.log("[Yandex] No proxies available, using direct connection");
+    }
+  }
+
   const context = await browser.newContext({
     userAgent: ua,
     viewport: vp,
@@ -176,6 +196,7 @@ export async function createYandexStealthPage(): Promise<{ page: Page; context: 
       "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
     },
     ...(storageState ? { storageState } : {}),
+    ...(proxyConfig ? { proxy: proxyConfig } : {}),
   });
 
   // Additional stealth patches
@@ -203,7 +224,7 @@ export async function createYandexStealthPage(): Promise<{ page: Page; context: 
   await page.route("**/mc.yandex.ru/**", (route) => route.abort());
   await page.route("**/top-fwz1.mail.ru/**", (route) => route.abort());
 
-  return { page, context };
+  return { page, context, proxyUsed };
 }
 
 /**
@@ -227,3 +248,6 @@ export async function closeBrowser(): Promise<void> {
     _browser = null;
   }
 }
+
+// Re-export refreshProxies for use in scraper when a proxy fails
+export { refreshProxies };

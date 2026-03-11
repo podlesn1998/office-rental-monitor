@@ -8,4 +8,5 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   rucaptchaApiKey: process.env.RUCAPTCHA_API_KEY ?? "",
+  proxylineApiKey: process.env.PROXYLINE_API_KEY ?? "",
 };

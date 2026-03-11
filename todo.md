@@ -399,3 +399,10 @@
 - [x] Integrate rucaptcha API for Yandex SmartCaptcha solving
 - [x] Add RUCAPTCHA_API_KEY secret
 - [x] Implement captcha detection + solving in Yandex scraper (checkbox click; Yandex uses PoW captcha, not SmartCaptcha)
+
+## Feature: ProxyLine Residential Proxy Integration
+- [x] Research ProxyLine API for getting proxy list
+- [x] Add PROXYLINE_API_KEY secret
+- [x] Implement proxy rotation helper (proxyLine.ts)
+- [x] Integrate proxy into Yandex scraper browser launch
+- [x] Test page 2+ scraping with proxy (needs proxies purchased in ProxyLine account)
