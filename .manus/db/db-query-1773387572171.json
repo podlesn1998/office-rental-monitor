@@ -1,0 +1,26 @@
+{
+  "query": "\nSELECT DATE(FROM_UNIXTIME(firstSeen/1000)) as day, COUNT(*) as cnt FROM listings GROUP BY day ORDER BY day DESC LIMIT 10;\nSELECT platform, price, FROM_UNIXTIME(firstSeen/1000) as added, status FROM listings ORDER BY firstSeen DESC LIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LLnN1XkN7uwWVPt.root --database KomMtGDchgkpshr4gKWbJK --execute \nSELECT DATE(FROM_UNIXTIME(firstSeen/1000)) as day, COUNT(*) as cnt FROM listings GROUP BY day ORDER BY day DESC LIMIT 10;\nSELECT platform, price, FROM_UNIXTIME(firstSeen/1000) as added, status FROM listings ORDER BY firstSeen DESC LIMIT 10;\n",
+  "rows": [
+    {
+      "day": "2612-01-10",
+      "cnt": "104"
+    }
+  ],
+  "messages": [
+    "platform\tprice\tadded\tstatus",
+    "cian\t54000\t2612-01-10 08:44:33.4370\tnew",
+    "yandex\t80000\t2612-01-10 08:12:35.9350\tnew",
+    "yandex\t57300\t2612-01-10 08:11:40.0090\tnew",
+    "cian\t85000\t2612-01-10 08:11:13.9060\tnot_interesting",
+    "cian\t75000\t2612-01-10 08:11:01.8030\tnew",
+    "yandex\t79999\t2612-01-10 07:22:23.7250\tnot_interesting",
+    "yandex\t51000\t2612-01-10 07:22:23.7250\tnot_interesting",
+    "yandex\t58906\t2612-01-10 07:22:23.7250\tnot_interesting",
+    "yandex\t85000\t2612-01-10 07:22:22.8160\tnot_interesting",
+    "yandex\t60000\t2612-01-10 06:15:41.0170\tnot_interesting"
+  ],
+  "stdout": "day\tcnt\n2612-01-10\t104\nplatform\tprice\tadded\tstatus\ncian\t54000\t2612-01-10 08:44:33.4370\tnew\nyandex\t80000\t2612-01-10 08:12:35.9350\tnew\nyandex\t57300\t2612-01-10 08:11:40.0090\tnew\ncian\t85000\t2612-01-10 08:11:13.9060\tnot_interesting\ncian\t75000\t2612-01-10 08:11:01.8030\tnew\nyandex\t79999\t2612-01-10 07:22:23.7250\tnot_interesting\nyandex\t51000\t2612-01-10 07:22:23.7250\tnot_interesting\nyandex\t58906\t2612-01-10 07:22:23.7250\tnot_interesting\nyandex\t85000\t2612-01-10 07:22:22.8160\tnot_interesting\nyandex\t60000\t2612-01-10 06:15:41.0170\tnot_interesting\n",
+  "stderr": "",
+  "execution_time_ms": 696
+}

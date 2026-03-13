@@ -7,7 +7,7 @@ let hourlyReportInterval: ReturnType<typeof setInterval> | null = null;
 let isRunning = false;
 
 const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
-const SCRAPE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes hard timeout
+const SCRAPE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes hard timeout
 
 // Hourly stats accumulator — reset every hour when report is sent
 const hourlyStats = {
@@ -20,7 +20,7 @@ const hourlyStats = {
 };
 
 /**
- * Run one full monitoring cycle with a hard 10-minute timeout.
+ * Run one full monitoring cycle with a hard 20-minute timeout.
  * If the scraper hangs, the timeout rejects and isRunning is reset.
  */
 export async function runMonitoringCycle(): Promise<void> {
@@ -58,9 +58,9 @@ export async function runMonitoringCycle(): Promise<void> {
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     if (errMsg === "SCRAPE_TIMEOUT") {
-      console.error("[Scheduler] Cycle TIMED OUT after 10 minutes — forcing reset");
+      console.error("[Scheduler] Cycle TIMED OUT after 20 minutes — forcing reset");
       hourlyStats.cyclesTimedOut += 1;
-      sendStatusMessage(`⏱ <b>Цикл завис</b> — принудительный сброс после 10 минут`).catch(() => {});
+      sendStatusMessage(`⏱ <b>Цикл завис</b> — принудительный сброс после 20 минут`).catch(() => {});
     } else {
       console.error("[Scheduler] Cycle error:", err);
       hourlyStats.cyclesErrored += 1;

@@ -411,3 +411,8 @@
 - [x] Add "queue" as a filter value (listings where status = "new", i.e. not yet rated)
 - [x] Update backend getListings to support status="queue" (reuses existing status="new")
 - [x] Add Queue button to filter bar in Home.tsx (renamed "Новые" → "Очередь")
+
+## Feature: Prevent sandbox hibernation
+- [ ] Set up external uptime monitor (UptimeRobot) to ping every 5 min
+- [ ] Reduce internal keep-alive interval from 2 min to 1 min
+- [ ] Add retry on ECONNRESET for first cycle after wakeup
