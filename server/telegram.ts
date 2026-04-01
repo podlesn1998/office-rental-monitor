@@ -508,6 +508,36 @@ export async function sendAllListingsForced(): Promise<number> {
 }
 
 /**
+ * Re-send ALL listings regardless of isSent flag.
+ * Used by the "Переотправить всё" manual button.
+ * Resets isSent=false for all listings first, then sends them all.
+ */
+export async function resendAllListings(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const configs = await db.select().from(telegramConfig).limit(1);
+  const config = configs[0];
+  if (!config?.botToken || !config?.chatId) {
+    console.log("[Telegram] No config found, cannot resend");
+    return 0;
+  }
+  // Fetch ALL listings ordered by firstSeen
+  const allListings = await db
+    .select()
+    .from(listings)
+    .orderBy(listings.firstSeen)
+    .limit(100); // safety cap — 100 messages at 1.5s = ~2.5 min
+  if (allListings.length === 0) {
+    console.log("[Telegram] No listings to resend");
+    return 0;
+  }
+  // Reset isSent so sendListingsBatch can re-mark them after sending
+  await db.update(listings).set({ isSent: false });
+  console.log(`[Telegram] Resending all ${allListings.length} listings (isSent reset)...`);
+  return sendListingsBatch(config.botToken, config.chatId, allListings, 1500, config.threadNew);
+}
+
+/**
  * Send a status/info message to the configured chat.
  */
 export async function sendStatusMessage(message: string): Promise<boolean> {

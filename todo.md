@@ -435,3 +435,10 @@
 - [x] Per-page try/catch already present in Yandex loop (verified)
 - [x] AbortSignal.timeout already on Yandex detail fetches (20s, verified)
 - [x] Reduced Yandex proxyPage.goto timeout from 40s to 30s (consistent with others)
+
+## Bug: "Отправить в TG" возвращает 0 (все помечены isSent=1) — FIXING
+- [x] Диагностировано: все 121 объявление имеют isSent=1, кнопка ищет только isSent=0
+- [x] Добавить sendAllForce в telegram.ts — отправляет ВСЕ объявления независимо от isSent
+- [x] Добавить tRPC процедуру telegram.resendAll
+- [x] Добавить кнопку "Переотправить всё" в TelegramPage.tsx
+- [x] Улучшить toast для кнопки "Отправить" — показывать "Нет новых для отправки" если sent=0

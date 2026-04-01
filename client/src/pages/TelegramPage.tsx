@@ -75,8 +75,19 @@ export default function TelegramPage() {
   });
 
   const sendPendingMutation = trpc.telegram.sendPending.useMutation({
-    onSuccess: (res) => toast.success(`Отправлено ${res.sent} объявлений`),
+    onSuccess: (res) =>
+      res.sent > 0
+        ? toast.success(`Отправлено ${res.sent} объявлений`)
+        : toast.info("Нет новых объявлений для отправки (все уже отправлены)"),
     onError: () => toast.error("Ошибка отправки"),
+  });
+
+  const resendAllMutation = trpc.telegram.resendAll.useMutation({
+    onSuccess: (res) =>
+      res.sent > 0
+        ? toast.success(`Переотправлено ${res.sent} объявлений`)
+        : toast.info("Нет объявлений для переотправки"),
+    onError: () => toast.error("Ошибка переотправки"),
   });
 
   const registerWebhookMutation = trpc.telegram.registerWebhook.useMutation({
@@ -324,19 +335,38 @@ export default function TelegramPage() {
           </Button>
 
           {(config?.hasToken || botToken) && chatId && (
-            <Button
-              onClick={() => sendPendingMutation.mutate()}
-              disabled={sendPendingMutation.isPending}
-              variant="outline"
-              className="w-full h-11 gap-2 border-primary/40 text-primary hover:bg-primary/10"
-            >
-              {sendPendingMutation.isPending ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Send size={15} />
-              )}
-              {sendPendingMutation.isPending ? "Отправка..." : "📨 Отправить все объявления в Telegram"}
-            </Button>
+            <>
+              <Button
+                onClick={() => sendPendingMutation.mutate()}
+                disabled={sendPendingMutation.isPending}
+                variant="outline"
+                className="w-full h-11 gap-2 border-primary/40 text-primary hover:bg-primary/10"
+              >
+                {sendPendingMutation.isPending ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
+                {sendPendingMutation.isPending ? "Отправка..." : "📨 Отправить новые в Telegram"}
+              </Button>
+              <Button
+                onClick={() => {
+                  if (window.confirm("Переотправить ВСЕ объявления (включая уже отправленные)? Это займёт несколько минут.")) {
+                    resendAllMutation.mutate();
+                  }
+                }}
+                disabled={resendAllMutation.isPending}
+                variant="outline"
+                className="w-full h-11 gap-2 border-orange-500/40 text-orange-400 hover:bg-orange-500/10"
+              >
+                {resendAllMutation.isPending ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
+                {resendAllMutation.isPending ? "Переотправка..." : "🔄 Переотправить все объявления"}
+              </Button>
+            </>
           )}
 
           {config?.hasToken && (

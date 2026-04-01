@@ -18,7 +18,7 @@ import {
 import { runAllScrapers, runPlatformScrape } from "./scrapers/index";
 import { computeScore } from "./utils/scoreListing";
 import { scrapeProgress } from "./scrapeProgress";
-import { sendPendingListings, sendAllListingsForced, testTelegramConnection } from "./telegram";
+import { sendPendingListings, sendAllListingsForced, resendAllListings, testTelegramConnection } from "./telegram";
 import { registerTelegramWebhook } from "./scheduler";
 
 // Backfill state (in-memory, reset on server restart)
@@ -163,6 +163,12 @@ export const appRouter = router({
     sendPending: publicProcedure.mutation(async () => {
       // Use forced send — bypasses active flag, sends all unsent listings
       const count = await sendAllListingsForced();
+      return { sent: count };
+    }),
+
+    resendAll: publicProcedure.mutation(async () => {
+      // Re-send ALL listings regardless of isSent flag (manual override)
+      const count = await resendAllListings();
       return { sent: count };
     }),
 
