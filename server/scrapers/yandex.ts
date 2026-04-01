@@ -250,6 +250,10 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
   let proxyContext: import("playwright-core").BrowserContext | null = null;
   let proxyPage: import("playwright-core").Page | null = null;
 
+  // Hard cap on all page operations to prevent indefinite hangs.
+  // Mirrors the same guard added to the CIAN scraper.
+  page.setDefaultTimeout(30000);
+
   try {
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
       const url = buildYandexUrl(params, pageNum);
@@ -334,7 +338,7 @@ export async function scrapeYandex(params: SearchParams): Promise<InsertListing[
             }
 
             const proxyUrl = buildYandexUrl(params, pageNum);
-            await proxyPage.goto(proxyUrl, { waitUntil: "domcontentloaded", timeout: 40000 });
+            await proxyPage.goto(proxyUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
             await humanBehavior(proxyPage);
             try {
               await proxyPage.waitForSelector('a[href*="/offer/"]', { timeout: 15000 });

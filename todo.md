@@ -427,3 +427,11 @@
 - [x] Add `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` env var support in browser.ts (Timeweb/Docker compatibility)
 - [x] Apply floor/ceiling/price enrichment on re-scrape (from user's GitHub version)
 - [x] Copy Dockerfile and entrypoint.sh from user's GitHub (Timeweb VPS deployment)
+
+## Feature: Comprehensive hang-prevention for all scrapers
+- [x] Add page.setDefaultTimeout(30000) to Yandex scraper (missing, unlike CIAN)
+- [x] Add page.setDefaultTimeout(30000) to Avito scraper (missing)
+- [x] Add browser launch timeout to getBrowser() (currently no timeout on chromium.launch)
+- [x] Per-page try/catch already present in Yandex loop (verified)
+- [x] AbortSignal.timeout already on Yandex detail fetches (20s, verified)
+- [x] Reduced Yandex proxyPage.goto timeout from 40s to 30s (consistent with others)

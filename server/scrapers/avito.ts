@@ -22,6 +22,8 @@ function buildAvitoUrl(params: SearchParams, page = 1): string {
 export async function scrapeAvito(params: SearchParams): Promise<InsertListing[]> {
   const results: InsertListing[] = [];
   const { page, context } = await createStealthPage();
+  // Hard cap on all page operations to prevent indefinite hangs.
+  page.setDefaultTimeout(30000);
 
   try {
     const url = buildAvitoUrl(params, 1);

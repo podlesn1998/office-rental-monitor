@@ -28,6 +28,9 @@ export async function getBrowser(): Promise<Browser> {
   const launched = await (chromiumExtra as any).launch({
     executablePath: CHROMIUM_PATH,
     headless: true,
+    // Timeout for the browser launch itself — prevents hanging if Chromium
+    // fails to start (e.g. missing binary, OOM, zombie process).
+    timeout: 30000,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
