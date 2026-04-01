@@ -442,3 +442,6 @@
 - [x] Добавить tRPC процедуру telegram.resendAll
 - [x] Добавить кнопку "Переотправить всё" в TelegramPage.tsx
 - [x] Улучшить toast для кнопки "Отправить" — показывать "Нет новых для отправки" если sent=0
+
+## Fix: resendAll должен отправлять только status=new (не интересные/неинтересные)
+- [x] Добавить фильтр eq(listings.status, "new") в resendAllListings в telegram.ts

@@ -521,19 +521,22 @@ export async function resendAllListings(): Promise<number> {
     console.log("[Telegram] No config found, cannot resend");
     return 0;
   }
-  // Fetch ALL listings ordered by firstSeen
+  // Fetch only listings with status="new" (skip interesting/not_interesting)
   const allListings = await db
     .select()
     .from(listings)
+    .where(eq(listings.status, "new"))
     .orderBy(listings.firstSeen)
     .limit(100); // safety cap — 100 messages at 1.5s = ~2.5 min
   if (allListings.length === 0) {
-    console.log("[Telegram] No listings to resend");
+    console.log("[Telegram] No new-status listings to resend");
     return 0;
   }
-  // Reset isSent so sendListingsBatch can re-mark them after sending
-  await db.update(listings).set({ isSent: false });
-  console.log(`[Telegram] Resending all ${allListings.length} listings (isSent reset)...`);
+  // Reset isSent only for these listings so sendListingsBatch can re-mark them
+  const ids = allListings.map((l) => l.id);
+  const { inArray } = await import("drizzle-orm");
+  await db.update(listings).set({ isSent: false }).where(inArray(listings.id, ids));
+  console.log(`[Telegram] Resending ${allListings.length} new-status listings (isSent reset)...`);
   return sendListingsBatch(config.botToken, config.chatId, allListings, 1500, config.threadNew);
 }
 
