@@ -4,14 +4,10 @@ import type { SearchParams } from "./index";
 import { guessDistrict } from "./district";
 
 // CIAN office type codes
-// Verified from live CIAN URLs:
-// office_type=4 → Офис
-// office_type=5 → Помещение свободного назначения (PSN)
-// office_type=9 → Коворкинг
 const OFFICE_TYPE_CODES: Record<string, number[]> = {
-  office: [4],           // Офис
+  office: [5],           // Офис
   coworking: [9],        // Коворкинг
-  free_purpose: [5],     // Свободного назначения
+  free_purpose: [4],     // Свободного назначения
   all: [4, 5, 9],        // Все типы
 };
 
@@ -50,55 +46,41 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
       ceilingHeight: number | null; floor: number | null; totalFloors: number | null;
     }> = [];
 
-    // New CIAN structure uses data-name="CommercialOfferCard" for each listing card
-    const cards = Array.from(document.querySelectorAll('[data-name="CommercialOfferCard"]'));
-    console.log('[CIAN-parse] CommercialOfferCard count:', cards.length);
-
-    // Fallback: if new structure not found, try old link-based approach
-    if (cards.length === 0) {
-      const links = Array.from(document.querySelectorAll('a[href*="/rent/commercial/"]'));
-      console.log('[CIAN-parse] Fallback: Total links found:', links.length);
-    }
-
+    const links = Array.from(document.querySelectorAll('a[href*="/rent/commercial/"]'));
     const seenIds: string[] = [];
 
-    for (const card of cards) {
-      // Get the main listing URL
-      const link = card.querySelector('a[href*="/rent/commercial/"]') as HTMLAnchorElement | null;
-      if (!link) continue;
-      const href = link.href;
+    for (const link of links) {
+      const href = (link as HTMLAnchorElement).href;
       const idMatch = href.match(/\/rent\/commercial\/(\d+)/);
       if (!idMatch) continue;
       const id = idMatch[1];
       if (seenIds.includes(id)) continue;
       seenIds.push(id);
 
-      const fullText = card.textContent ?? "";
+      let container: Element | null = link.parentElement;
+      let depth = 0;
+      while (container && depth < 12) {
+        const text = container.textContent ?? "";
+        if ((text.includes("руб./мес") || text.includes("₽/мес") || text.includes("руб/мес")) && text.includes("м²") && text.length > 50) break;
+        container = container.parentElement;
+        depth++;
+      }
+      if (!container) continue;
 
-      // Skip CIAN service banners
-      if (
-        fullText.includes("Средняя цена") ||
-        fullText.includes("Дополнительные предложения") ||
-        fullText.includes("Похожие объявления") ||
-        fullText.includes("Объявления рядом")
-      ) continue;
+      const fullText = container.textContent ?? "";
 
-      // Title — CommercialTitle data-name
-      const titleEl = card.querySelector('[data-name="CommercialTitle"]');
-      const titleText = titleEl?.textContent?.trim() ?? "";
-
-      // Price — extract from CommercialTitle text or full card text
-      // Format: "82 м² за 550 000 руб./мес." or "154 800 ₽/мес." (may use non-breaking spaces \u00a0)
+      const priceEl = container.querySelector('[class*="price"], [class*="Price"]');
       let price: number | null = null;
-      // Strip ALL whitespace including \u00a0 (non-breaking space) before matching
-      const strippedForPrice = fullText.replace(/[\s\u00a0]/g, "");
-      const priceMatch = strippedForPrice.match(/(\d{4,})(?:руб\.?\/мес|₽\/мес)/);
-      if (priceMatch) price = parseInt(priceMatch[1]);
-      // Sanity check: monthly office rent should not exceed 5,000,000 ₽
-      if (price && price > 5000000) price = null;
-
-      // Area — extract from CommercialTitle or full text
-      // Format: "82 м²" or "77,4 – 199,6 м²" (take first/min value)
+      if (priceEl) {
+        const priceMatch = (priceEl.textContent ?? "").replace(/\s/g, "").match(/(\d{4,})/);
+        if (priceMatch) price = parseInt(priceMatch[1]);
+      }
+      // Fallback: extract price from full text (CIAN uses "за X руб./мес." format)
+      if (!price) {
+        const rubMatch = fullText.replace(/\s/g, "").match(/за(\d{4,})руб\.?\/мес/);
+        if (rubMatch) price = parseInt(rubMatch[1]);
+      }
+      // Find ALL м² occurrences and pick the one in realistic office area range (10–999 m²)
       let area: number | null = null;
       const areaRe = /(\d+[,.]?\d*)\s*м²/g;
       let areaM: RegExpExecArray | null;
@@ -107,95 +89,94 @@ async function parseCianPage(page: import("playwright-core").Page): Promise<Arra
         if (val >= 10 && val <= 999) { area = val; break; }
       }
 
-      // Metro — Underground data-name: "Парнас⋅15 минут пешком"
-      const metroEl = card.querySelector('[data-name="Underground"]');
+      const metroEl = container.querySelector('[class*="underground"], [class*="metro"], [class*="Metro"]');
       let metro = "";
       let metroMin: number | null = null;
       if (metroEl) {
         const metroText = metroEl.textContent ?? "";
+        // CIAN format: "Площадь Восстания⋅6 минут пешком"
         const metroMatch = metroText.match(/^([^⋅•·]+)[⋅•·]\s*(\d+)\s*мин/);
         if (metroMatch) {
           metro = metroMatch[1].trim();
           metroMin = parseInt(metroMatch[2]);
         } else {
-          metro = metroText.trim();
+          metro = metroText.split(/[⋅•·]/)[0].trim();
         }
       }
 
-      // Address — build from AddressPathItem elements
-      // Parts: ["Санкт-Петербург", "р-н Центральный", "улица Гороховая", "11"]
-      const addrParts = Array.from(card.querySelectorAll('[data-name="AddressPathItem"]'))
-        .map(el => el.textContent?.trim() ?? "")
-        .filter(Boolean);
-      // Find street part (contains street keywords)
-      const streetKeywords = /улица|проспект|пер\.|набережная|шоссе|бульвар|переулок|пл\.|площадь|линия|аллея|тупик|дорога/i;
-      const streetIdx = addrParts.findIndex(p => streetKeywords.test(p));
       let address = "";
-      if (streetIdx >= 0) {
-        // Street + house number (last part)
-        const houseNum = addrParts[addrParts.length - 1];
-        address = streetIdx < addrParts.length - 1
-          ? `${addrParts[streetIdx]}, ${houseNum}`
-          : addrParts[streetIdx];
-      } else if (addrParts.length >= 2) {
-        // Fallback: last two parts
-        address = addrParts.slice(-2).join(", ");
-      } else {
-        address = addrParts.join(", ");
+      const addressEls = container.querySelectorAll('[class*="address"], [class*="Address"]');
+      for (const addrEl of Array.from(addressEls)) {
+        const text = addrEl.textContent?.trim() ?? "";
+        // Skip metro elements (they contain ⋅ separator)
+        // CIAN address format: "Санкт-Петербург, р-н Центральный, улица Жуковского, 49"
+        const lines = text.split(/\n/).map((l: string) => l.trim()).filter((l: string) => l.length > 5);
+        for (const line of lines) {
+          if (!line.includes("⋅") && !line.match(/^\d+\s*мин/) && line.length > 10) {
+            address = line;
+            break;
+          }
+        }
+        if (address) break;
       }
 
-      // Photos — first img with cdn URL
-      const imgEl = card.querySelector("img") as HTMLImageElement | null;
-      const imgSrc = (imgEl?.src ?? imgEl?.getAttribute("data-src") ?? "").slice(0, 300);
+      const imgEl = container.querySelector("img");
+      const imgSrc = (imgEl?.src ?? imgEl?.getAttribute("data-src") ?? "").slice(0, 200);
 
-      // Ceiling height: look for patterns like "потолки 3м", "высота потолков 3.5 м"
+      const titleEl = container.querySelector('[class*="title"], [class*="Title"], [class*="name"]');
+      const titleText = titleEl?.textContent?.trim() ?? "";
+
+      // Skip CIAN service banners (average price, additional offers, etc.)
+      if (
+        fullText.includes("Средняя цена") ||
+        fullText.includes("Дополнительные предложения") ||
+        fullText.includes("Похожие объявления") ||
+        fullText.includes("Объявления рядом")
+      ) continue;
+
+      // Extract floor and totalFloors from text
+      // Patterns: "3 этаж из 5", "3/5 этаж", "на 3 этаже", "расположен на первом этаже"
+      let floor: number | null = null;
+      let totalFloors: number | null = null;
+      const floorFromTotal = fullText.match(/(\d+)\s*(?:этаж|эт\.?)\s+из\s+(\d+)/i)
+        || fullText.match(/(\d+)\/(\d+)\s*(?:этаж|эт)/i);
+      if (floorFromTotal) {
+        floor = parseInt(floorFromTotal[1]);
+        totalFloors = parseInt(floorFromTotal[2]);
+      } else {
+        // Try ordinal words: первый, второй, третий, etc.
+        const ordinals: Record<string, number> = {
+          'первом': 1, 'первый': 1,
+          'втором': 2, 'второй': 2,
+          'третьем': 3, 'третий': 3,
+          'четвёртом': 4, 'четвертом': 4, 'четвёртый': 4,
+          'пятом': 5, 'пятый': 5,
+          'шестом': 6, 'шестой': 6,
+          'седьмом': 7, 'седьмой': 7,
+          'восьмом': 8, 'восьмой': 8,
+          'девятом': 9, 'девятый': 9,
+          'десятом': 10, 'десятый': 10,
+          'цокольном': -1, 'цоколь': -1,
+        };
+        const ordinalMatch = fullText.match(/на\s+(\w+)\s+этаже/i);
+        if (ordinalMatch) {
+          const word = ordinalMatch[1].toLowerCase();
+          if (ordinals[word] !== undefined) floor = ordinals[word];
+        }
+        // Try numeric: "на 3 этаже", "3 этаж"
+        if (floor === null) {
+          const numFloor = fullText.match(/на\s+(\d+)\s*(?:этаже|этаж)/i) || fullText.match(/^(\d+)\s*этаж/im);
+          if (numFloor) floor = parseInt(numFloor[1]);
+        }
+      }
+
+      // Extract ceiling height: look for patterns like "3 м", "2.7 м", "потолки 3м", "высота потолков"
       let ceilingHeight: number | null = null;
       const ceilMatch = fullText.match(/(?:потолк[иа]?|высот[аы]\s+потолк[иа]?)[^\d]*(\d+[,.]?\d*)\s*м/i)
         || fullText.match(/высот[аы][^\d]*(\d+[,.]?\d*)\s*м/i);
       if (ceilMatch) {
         const val = parseFloat(ceilMatch[1].replace(",", "."));
         if (val >= 2 && val <= 10) ceilingHeight = Math.round(val * 100);
-      }
-
-      // Floor: CommercialFactoid may contain "1 этаж" (floor of unit) or "25 этажей" (total floors of building)
-      // IMPORTANT: distinguish "этаж" (floor) from "этажей" (total floors count)
-      let floor: number | null = null;
-      let totalFloors: number | null = null;
-
-      // First: extract totalFloors from factoid "N этажей"
-      const factoids = Array.from(card.querySelectorAll('[data-name="CommercialFactoid"]'))
-        .map(el => el.textContent?.trim() ?? "");
-      for (const factoid of factoids) {
-        const totalMatch = factoid.match(/^(\d+)\s*этажей/i);
-        if (totalMatch) { totalFloors = parseInt(totalMatch[1]); break; }
-      }
-
-      // Pattern: "1/5 эт." or "этаж 1 из 5" or "1 из 5 эт"
-      const floorSlashMatch = fullText.match(/(\d+)\s*\/\s*(\d+)\s*эт/i)
-        || fullText.match(/этаж\s+(\d+)\s+из\s+(\d+)/i)
-        || fullText.match(/(\d+)\s+из\s+(\d+)\s+эт/i);
-      if (floorSlashMatch) {
-        const f = parseInt(floorSlashMatch[1]);
-        const t = parseInt(floorSlashMatch[2]);
-        if (f >= 1 && f <= 100 && t >= f) { floor = f; if (!totalFloors) totalFloors = t; }
-      }
-
-      if (floor === null) {
-        // CommercialFactoid: "1 этаж" (exact match, NOT "этажей")
-        for (const factoid of factoids) {
-          // Match "1 этаж" but NOT "25 этажей"
-          const fm = factoid.match(/^(\d+)\s*этаж(?!ей)/i);
-          if (fm) { floor = parseInt(fm[1]); break; }
-        }
-      }
-
-      if (floor === null) {
-        // Fallback: "N этаж" in full text (not "этажей")
-        const floorSingleMatch = fullText.match(/(\d+)[-й]?\s*этаж(?!е)/i);
-        if (floorSingleMatch) {
-          const f = parseInt(floorSingleMatch[1]);
-          if (f >= 1 && f <= 100) floor = f;
-        }
       }
 
       cardResults.push({ id, href, price, area, metro, metroMin, address, imgSrc, title: titleText, ceilingHeight, floor, totalFloors });
@@ -210,26 +191,25 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
   const { page, context } = await createStealthPage();
   const maxPages = params.maxPages ?? 2;
 
+  // Hard cap on all page operations to prevent indefinite hangs.
+  // Without this, pages that start loading but never fire the "load" event
+  // (e.g. stuck ad/tracker scripts) will block the entire scraping cycle.
+  page.setDefaultTimeout(30000);
+
   try {
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
       const url = buildCianUrl(params, pageNum);
       console.log(`[CIAN] Navigating to page ${pageNum}: ${url}`);
 
       try {
-        await page.goto(url, { waitUntil: "load", timeout: 35000 });
+        // Use domcontentloaded instead of "load" to avoid hanging on pages
+        // that start loading but never fully complete (stuck ad/tracker scripts).
+        // This was the root cause of the 4-hour hang on page 10.
+        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
         await page.waitForTimeout(pageNum === 1 ? 4000 : 2500);
 
         const title = await page.title().catch(() => "");
         console.log(`[CIAN] Page ${pageNum} title: ${title}`);
-
-        // Wait for listing links to appear, then scroll to trigger lazy loading
-        await page.waitForSelector('a[href*="/rent/commercial/"]', { timeout: 10000 }).catch(() => {});
-        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
-        await page.waitForTimeout(1200);
-        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-        await page.waitForTimeout(1200);
-        await page.evaluate(() => window.scrollTo(0, 0));
-        await page.waitForTimeout(800);
 
         if (
           title.toLowerCase().includes("captcha") ||
@@ -240,16 +220,7 @@ export async function scrapeCian(params: SearchParams): Promise<InsertListing[]>
           break;
         }
 
-        // Capture browser console logs for debugging
-        const consoleMsgs: string[] = [];
-        const consoleHandler = (msg: import('playwright-core').ConsoleMessage) => {
-          if (msg.text().includes('[CIAN-parse]')) consoleMsgs.push(msg.text());
-        };
-        page.on('console', consoleHandler);
-        
         const cards = await parseCianPage(page);
-        page.off('console', consoleHandler);
-        consoleMsgs.forEach(m => console.log(m));
         console.log(`[CIAN] Parsed ${cards.length} cards from page ${pageNum}`);
 
         if (cards.length === 0) {

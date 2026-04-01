@@ -61,19 +61,21 @@ async function deduplicateListings(
   const existingIds = new Set(existing.map((e) => e.platformId));
   console.log(`[Dedup] platform=${platform} scraped=${scraped.length} existing=${existing.length} existingIds=[${Array.from(existingIds).join(',')}]`);
 
-  // Update lastSeen for existing listings
-  const existingPlatformIds = scraped
-    .filter((l) => existingIds.has(l.platformId))
-    .map((l) => l.platformId);
-
-  if (existingPlatformIds.length > 0) {
+  // Update existing listings: enrich floor/ceiling/price data and update lastSeen.
+  // This allows listings to accumulate richer data across multiple scrape cycles.
+  for (const l of scraped.filter((l) => existingIds.has(l.platformId))) {
+    const updateFields: Record<string, unknown> = { lastSeen: new Date(), isNew: false };
+    if (l.floor != null) updateFields.floor = l.floor;
+    if (l.totalFloors != null) updateFields.totalFloors = l.totalFloors;
+    if (l.ceilingHeight != null) updateFields.ceilingHeight = l.ceilingHeight;
+    if (l.price != null) updateFields.price = l.price;
     await db
       .update(listings)
-      .set({ lastSeen: new Date(), isNew: false })
+      .set(updateFields)
       .where(
         and(
           eq(listings.platform, platform),
-          inArray(listings.platformId, existingPlatformIds)
+          eq(listings.platformId, l.platformId!)
         )
       );
   }

@@ -13,8 +13,9 @@ let _scrapeLock = false;
 let _lockWaiters: Array<() => void> = [];
 
 const CHROMIUM_PATH =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
   process.env.CHROMIUM_PATH ||
-  "/usr/bin/chromium-browser";
+  "/usr/bin/chromium";
 
 // Session storage path for Yandex cookies
 const SESSION_DIR = path.join(process.cwd(), ".sessions");

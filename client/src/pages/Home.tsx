@@ -207,7 +207,8 @@ export default function Home() {
     onMutate: async ({ id, status: newStatus }) => {
       await utils.listings.list.cancel();
       const prev = utils.listings.list.getData({ platform, status, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset });
-      utils.listings.list.setData({ platform, status, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset }, (old) => old && { ...old, items: old.items.map((d: ListingItem) => d.id === id ? { ...d, status: newStatus } : d) });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      utils.listings.list.setData({ platform, status, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset }, (old: any) => old && { ...old, items: old.items.map((d: ListingItem) => d.id === id ? { ...d, status: newStatus } : d) });
       return { prev };
     },
     onError: (_err, _vars, ctx) => { if (ctx?.prev) utils.listings.list.setData({ platform, status, sortBy, minCeilingHeight, areaIdeal, limit: LIMIT, offset }, ctx.prev); },

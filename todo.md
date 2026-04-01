@@ -416,3 +416,14 @@
 - [ ] Set up external uptime monitor (UptimeRobot) to ping every 5 min
 - [ ] Reduce internal keep-alive interval from 2 min to 1 min
 - [ ] Add retry on ECONNRESET for first cycle after wakeup
+
+## Bug: CIAN scraper hangs indefinitely (FIXED)
+- [x] Root cause: `waitUntil: "load"` with 35s timeout — pages that start loading but never fire the "load" event (stuck ad/tracker scripts) block the entire scraping cycle
+- [x] Fix: changed `waitUntil` to `"domcontentloaded"` + added `page.setDefaultTimeout(30000)` hard cap
+- [x] Fix: resolved duplicate key `первом` in cian.ts ordinals object (TS error 1117)
+- [x] Fix: resolved TypeScript type mismatch in Home.tsx `setData` call (cast to `any`)
+
+## Maintenance: Sync user's GitHub improvements (DONE)
+- [x] Add `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` env var support in browser.ts (Timeweb/Docker compatibility)
+- [x] Apply floor/ceiling/price enrichment on re-scrape (from user's GitHub version)
+- [x] Copy Dockerfile and entrypoint.sh from user's GitHub (Timeweb VPS deployment)
