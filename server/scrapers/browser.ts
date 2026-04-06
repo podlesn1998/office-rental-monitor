@@ -12,10 +12,29 @@ let _browser: Browser | null = null;
 let _scrapeLock = false;
 let _lockWaiters: Array<() => void> = [];
 
-const CHROMIUM_PATH =
-  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
-  process.env.CHROMIUM_PATH ||
-  "/usr/bin/chromium";
+// Auto-detect Chromium executable — try multiple common paths in order
+function detectChromiumPath(): string {
+  const candidates = [
+    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    process.env.CHROMIUM_PATH,
+    "/usr/bin/chromium-browser",   // Ubuntu snap / apt
+    "/usr/bin/chromium",           // Debian / Alpine
+    "/usr/bin/google-chrome",      // Google Chrome deb
+    "/usr/bin/google-chrome-stable",
+    "/snap/bin/chromium",          // Ubuntu snap
+  ];
+  for (const p of candidates) {
+    if (p && fs.existsSync(p)) {
+      console.log(`[Browser] Using Chromium at: ${p}`);
+      return p;
+    }
+  }
+  // Fallback — let Playwright use its own bundled browser
+  console.warn("[Browser] No system Chromium found, using Playwright default");
+  return "";
+}
+
+const CHROMIUM_PATH = detectChromiumPath();
 
 // Session storage path for Yandex cookies
 const SESSION_DIR = path.join(process.cwd(), ".sessions");
@@ -26,7 +45,7 @@ export async function getBrowser(): Promise<Browser> {
 
   console.log("[Browser] Launching Chromium (stealth)...");
   const launched = await (chromiumExtra as any).launch({
-    executablePath: CHROMIUM_PATH,
+    ...(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {}),
     headless: true,
     // Timeout for the browser launch itself — prevents hanging if Chromium
     // fails to start (e.g. missing binary, OOM, zombie process).

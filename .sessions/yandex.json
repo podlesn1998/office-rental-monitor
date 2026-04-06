@@ -55,7 +55,7 @@
       "value": "417899",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1809626768.977279,
+      "expires": 1810060779.963217,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -65,7 +65,7 @@
       "value": "2",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1809626768.978977,
+      "expires": 1810060780.00847,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -75,7 +75,7 @@
       "value": "10174",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1809626768.980466,
+      "expires": 1810060780.010117,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -215,58 +215,38 @@
       "sameSite": "None"
     },
     {
-      "name": "prcl",
-      "value": "a81c740d16d64b",
-      "domain": ".vk.com",
-      "path": "/",
-      "expires": 1775129140.189263,
-      "httpOnly": true,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "spravka",
-      "value": "dD0xNzc1MDQ2MzU4O2k9MTk1Ljg2LjE4My4xMzc7RD01MzVBMUYxRDA4RDAxMjJFMTkzNEM4NEIyNUM0QzY4M0VBOEE2NjBFRTdFQzQ5MDRFMTNEOEFFRjJBMDAyNzIyNUZGMTgxMjQ5NDlFMTExRDZFNTUyRkYyODlEQzcyREI2M0YxMjI1Mjc4MzZGRjZFMEQ2MjMzQzkwQjhDQTc0NUIxRTE0NUE4MDI1NkQ5NDFFNzQ3MEZDQ0REOUU5QUYyNkIwNTY4NEFDOEQzNkFEN0ZEO3U9MTc3NTA0NjM1ODM0NjM2NzM1ODtoPWU2N2RlYTYwZmE4ZWQxZjg5NjM2YTcwMTJlNzVmZTc5",
-      "domain": ".yandex.ru",
-      "path": "/",
-      "expires": 1777638358.437186,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
       "name": "prev_uaas_data",
-      "value": "%7B%22uaasExpNames%22%3A%5B%22REALTYFRONT-24169_redirect_podbor_landing_to_quiz%22%2C%22ARENDA_RENT_EVALUATION_BANNER%22%2C%22REALTYFRONT-27030_legal_entity_psp_transition%22%2C%22REALTYFRONT-26236_show_ad%22%2C%22REALTYFRONT-26851_service_quiz_disable_phone_autocomplete%22%2C%22REALTYFRONT-28674_owner_flat_tenant_candidate_groups_deadline%22%2C%22REALTYFRONT-29138_realty-ai-agent-entry-points%22%2C%22REALTYFRONT-16113_bring_tenant_banner%22%2C%22REALTYFRONT-16792_show_arenda_chat_button%22%2C%22REALTYFRONT-17599_new_owner_target%22%2C%22REALTYFRONT-19425_redesign_site_plans_modals%22%2C%22REALTYFRONT-18481_verticals_3d_tour%22%2C%22REALTYFRONT-20711_quick_request_for_an_impression%22%2C%22REALTYFRONT-21701_owner_get_consultation_target%22%2C%22REALTYBACK-13472_newbuilding_rate_change%22%2C%22REALTYFRONT-18560_realty_hidden_flat_number%22%2C%22REALTYFRONT-22002_show_podbor_pdf_for_mobile_number_banners%22%2C%22REALTYFRONT-21695_show_new_landing_owner%22%2C%22REALTYFRONT-22452_new_podbor_entrypoints%22%2C%22REALTYFRONT-18660_additional_cta_on_paid_site_card%22%2C%22REALTYFRONT-23113_podbor_site_and_offer_cards_mortgage_calc_up%22%2C%22REALTYFRONT-22354_redesign_samolet_gallery%22%2C%22REALTYFRONT-20932_without_newbuilding_carousel%22%2C%22REALTYFRONT-23562_show_offer_draft_agents_promo%22%2C%22REALTYFRONT-25094_show_banner_secondary_agents_promo%22%2C%22REALTYFRONT-24711_landing_referral_cat%22%2C%22REALTYFRONT-24967_podbor_banner_redesign_2%22%2C%22REALTYFRONT-28655_developer_price%22%2C%22REALTYBACK-20078_ml_offers_ranking_unified_formula%22%2C%22REALTYFRONT-25800_show_agent_secondary_promo_quiz_estimation%22%2C%22REALTYFRONT-30977_ai_chat_desktop_offer_card_entrypoint%22%2C%22REALTYFRONT-30979_ai_chat_desktop_listing_entrypoint%22%2C%22REALTYFRONT-30397_special_capital_1%22%2C%22REALTYFRONT-21285_show_arenda_calculator_banner%22%2C%22REALTYFRONT-21278_hidden_price_desc%22%2C%22realty_aa_experiment%22%5D%2C%22uaasUid%22%3A%227926646141773210561%22%7D",
+      "value": "%7B%22uaasExpNames%22%3A%5B%22REALTYFRONT-24169_redirect_podbor_landing_to_quiz%22%2C%22ARENDA_RENT_EVALUATION_BANNER%22%2C%22REALTYFRONT-27030_legal_entity_psp_transition%22%2C%22REALTYFRONT-26236_show_ad%22%2C%22REALTYFRONT-26851_service_quiz_disable_phone_autocomplete%22%2C%22REALTYFRONT-28674_owner_flat_tenant_candidate_groups_deadline%22%2C%22REALTYFRONT-29138_realty-ai-agent-entry-points%22%2C%22REALTYFRONT-31373_capitals_simple_flow%22%2C%22REALTYFRONT-16113_bring_tenant_banner%22%2C%22REALTYFRONT-16792_show_arenda_chat_button%22%2C%22REALTYFRONT-17599_new_owner_target%22%2C%22REALTYFRONT-19425_redesign_site_plans_modals%22%2C%22REALTYFRONT-18481_verticals_3d_tour%22%2C%22REALTYFRONT-20711_quick_request_for_an_impression%22%2C%22REALTYFRONT-21701_owner_get_consultation_target%22%2C%22REALTYBACK-13472_newbuilding_rate_change%22%2C%22REALTYFRONT-18560_realty_hidden_flat_number%22%2C%22REALTYFRONT-22002_show_podbor_pdf_for_mobile_number_banners%22%2C%22REALTYFRONT-21695_show_new_landing_owner%22%2C%22REALTYFRONT-22452_new_podbor_entrypoints%22%2C%22REALTYFRONT-18660_additional_cta_on_paid_site_card%22%2C%22REALTYFRONT-23113_podbor_site_and_offer_cards_mortgage_calc_up%22%2C%22REALTYFRONT-22354_redesign_samolet_gallery%22%2C%22REALTYFRONT-20932_without_newbuilding_carousel%22%2C%22REALTYFRONT-23562_show_offer_draft_agents_promo%22%2C%22REALTYFRONT-25094_show_banner_secondary_agents_promo%22%2C%22REALTYFRONT-24711_landing_referral_cat%22%2C%22REALTYFRONT-24967_podbor_banner_redesign_2%22%2C%22REALTYFRONT-28655_developer_price%22%2C%22REALTYBACK-20078_ml_offers_ranking_unified_formula%22%2C%22REALTYFRONT-25800_show_agent_secondary_promo_quiz_estimation%22%2C%22REALTYFRONT-30977_ai_chat_desktop_offer_card_entrypoint%22%2C%22REALTYFRONT-30979_ai_chat_desktop_listing_entrypoint%22%2C%22REALTYFRONT-30397_special_capital_1%22%2C%22REALTYFRONT-21285_show_arenda_calculator_banner%22%2C%22REALTYFRONT-21278_hidden_price_desc%22%2C%22realty_aa_experiment%22%5D%2C%22uaasUid%22%3A%227926646141773210561%22%7D",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1775067079.832822,
+      "expires": 1775501089.327968,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "prev_uaas_expcrypted",
-      "value": "bZJ-pRkJ9wcT9F5LUdzvNf8Dp-s0dt9wq7L6IrTyjHCAwejYHx55ymtUKF7t1EBsogh34gMMB01lTgfsFJpZc4EboxMeklSoO1u7SlJyx3oMUX-ZlFjYoxB53UsYuZQF1-O0pGsetE-QLHgOrAIt0bXu4LGhUiYiR-t_BaYbjgiqoR3R-CCFTEDKQ4oWMMnqds2P2I0F36e7tddyAhEAanmfHdym6R4ZL7w_lMWISE6zrZfSmKHXuyf0OgsuIPlliygm4WlClyQyatN77uTtKvYIlupmZO9LTEgyMNZHDbXImoHzhoj0jYALN7PGffRUOMg0PFlgbwI9qlylSwBz1Q6tXrCknBXnOBtdiXT3xKT0nG_7egK9b9-3C8GYynLSut11BYKyG1fnc4QpUwlWL1fuZH9XZRyM8GbOTQgMo1DJVl5O4zIkI64iH_bEkcKY5K7IlXBhwHRq49Dz58PXR_U5D1kTHtACUcgqfRoi2EVJOSFaiv1ocrdGSD4-Jcn15ncKaQjT_IMI_zW0_rRihekkjQpes6ei",
+      "value": "dwqfDDwfwGnkqOEa9HZnxATSvDZT4h46mg9dMMOXPU1kz1voNwb-UTll32yklX679US7qDJGYHcL2UX0IpH68An9w0n---o6CMCin5CQoeFA6mU-FcVqp94KdXdqB8rzW4rMmQ2s2YEtDPzYKO617r6QP6wvmg7eKUuLMbk6bm2JloU7GQoxHf0UlUYxpseV-tWT5RmFv6ujNqq3RFjy9eJkj494mMSFMmAuLkwNIQDy0i9r82XLetBauhU4Ti4iVAsWZQRJf-ZBF3V4Zt3cxmGwZL3LzV-eCtqUrUFqsCbIun43gyvriBoPRErvSNJoiUOdDeLhJeisIXSJkKez99E0YebebtK8FWJcJCTcYoK3SL4g6pWJa0Nunj69iZmPgB5qJtjGds7q05fPqcKZnwbvNDf-TNMEWNQq7yJRRhljopSIpgkqCkx1udP_eU_BMOA-HFKxGbbG7z60IKFMyZ5t1oZRir1nH4WAD7NjrrLvd8qzHMlyHUBpTHSs85ThHcjeUtS7CtpZocLnspCOyjkXuxr5ypFG",
       "domain": ".realty.yandex.ru",
       "path": "/",
-      "expires": 1775067079.832874,
+      "expires": 1775501089.328011,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "bh",
-      "value": "EkIiQ2hyb21pdW0iO3Y9IjEyOCIsICIgTm90IEE7QnJhbmQiO3Y9Ijk5IiwgIkdvb2dsZSBDaHJvbWUiO3Y9IjEyOCIqAj8wOgkiV2luZG93cyJgk721zgZqHtzK4f8IktihsQOfz+HqA/v68OcN6//99g+2xsyHCA==",
+      "value": "EkIiQ2hyb21pdW0iO3Y9IjEyOCIsICIgTm90IEE7QnJhbmQiO3Y9Ijk5IiwgIkdvb2dsZSBDaHJvbWUiO3Y9IjEyOCIqAj8wOgkiV2luZG93cyJg7PvPzgZqHtzK4f8IktihsQOfz+HqA/v68OcN6//99g+2xsyHCA==",
       "domain": ".yandex.ru",
       "path": "/",
-      "expires": 1809626771,
+      "expires": 1810060780,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "from_lifetime",
-      "value": "1775066779338",
+      "value": "1775500789003",
       "domain": "realty.yandex.ru",
       "path": "/",
       "expires": -1,
@@ -275,11 +255,21 @@
       "sameSite": "Lax"
     },
     {
-      "name": "_yasc",
-      "value": "IFNPvqTy2OIE9w4KtHhnsAUi1Tjyx4KNUA42DFZCFJF/53SyCVc3ikiGsdCUT2UBubAhMn6LGTu+H94=",
+      "name": "spravka",
+      "value": "dD0xNzc1NTAwNzk0O2k9MzUuMTQ5LjIzOS4xO0Q9RDlENDkwMkMwQzlFOTIzRUFFNDUxRDA5ODVCNjg5OTUzRDcxQzMzNDgwRDlDNTZDQkJFREIzNUVGNzlENTZENDc2M0FCRDJGNDk5NzZFMzEwMDI1RjM2MDcwMjMxNzMyNDJEREM4OTBEODQzNUQyOTlBMUI0QUY1RTE5MDgwNTU3QkQ3N0VFOTUxMDU1QzNFNUI0MzNFRjE4REEzM0U7dT0xNzc1NTAwNzk0MDAzNDg4MjY4O2g9NjIxMWYyYmJhYjQ1MmZiMWRjODFmZGFhOWM5MzIwNzU=",
       "domain": ".yandex.ru",
       "path": "/",
-      "expires": 1809626788.471649,
+      "expires": 1778092794.157275,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_yasc",
+      "value": "3urvH2JP0sTR83dUQE8JnhJJH4l+rX/QNHaEI/5gicxOuV0FheikJsGdqeBWSc6rtBo0aJdJh7vRE5j1Rg==",
+      "domain": ".yandex.ru",
+      "path": "/",
+      "expires": 1810060795.112256,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -299,7 +289,7 @@
         },
         {
           "name": "visit_session",
-          "value": "{\"id\":\"qe859e1b\",\"sessionInit\":\"2026-04-01T18:06:18.386Z\",\"sessionUpdated\":\"2026-04-01T18:06:18.386Z\"}"
+          "value": "{\"id\":\"iodrjp1xh\",\"sessionInit\":\"2026-04-06T18:39:48.188Z\",\"sessionUpdated\":\"2026-04-06T18:39:48.188Z\"}"
         },
         {
           "name": "FILTERS_PANEL_SEARCH_SUBSCRIPTION_TOOLTIP_KEY",
